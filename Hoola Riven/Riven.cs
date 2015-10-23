@@ -406,7 +406,7 @@ namespace HoolaRiven
                 float wrange = 0;
                 if (Player.HasBuff("RivenFengShuiEngine"))
                 {
-                    wrange = 195 + Player.BoundingRadius;
+                    wrange = 195 + Player.BoundingRadius + 70;
                     if (Player.CountEnemiesInRange(wrange) >= AutoW)
                     {
                         W.Cast();
@@ -414,7 +414,7 @@ namespace HoolaRiven
                 }
                 else
                 {
-                    wrange = 120 + Player.BoundingRadius;
+                    wrange = 120 + Player.BoundingRadius + 70;
                     if (Player.CountEnemiesInRange(wrange) >= AutoW)
                     {
                         W.Cast();
