@@ -32,7 +32,7 @@ using LeagueSharp.Common;
 
 #endregion
 
-namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
+namespace HoolaRiven
 {
     /// <summary>
     ///     This class offers everything related to auto-attacks and orbwalking.
@@ -92,7 +92,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
             "monkeykingdoubleattack", "RivenMartyR",
             "shyvanadoubleattack", "shyvanadoubleattackdragon", "zyragraspingplantattack", "zyragraspingplantattack2",
             "zyragraspingplantattackfire", "zyragraspingplantattack2fire", "viktorpowertransfer", "sivirwattackbounce"
-        }; // "jarvanivcataclysmattack" is auto attack. Edited by RL244
+        }; 
 
         //Spells that are attacks even if they dont have the "attack" word in their name.
         private static readonly string[] Attacks =
@@ -102,7 +102,6 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
             "xenzhaothrust3", "viktorqbuff"
         };
-        // Onhit Spell 온힛 스펠
         private static readonly string[] OHSP = { "parley", "ezrealmysticshot" };
 
         // Champs whose auto attacks can't be cancelled
@@ -278,7 +277,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
         /// </summary>
         public static bool CanAttack()
         {
-            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000; // + Game.Ping / 2 일단 원본과 매우 비슷한값임.
+            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000;
         }
 
         /// <summary>
@@ -300,7 +299,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                 return true;
             }
 
-            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup); // + Game.Ping / 2 임의수정
+            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
         }
 
         public static void SetMovementDelay(int delay)
@@ -386,19 +385,13 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
         {
             try
             {
-                if (target.IsValidTarget() && CanAttack() && Attack) // 임의수정
+                if (target.IsValidTarget() && CanAttack() && Attack)
                 {
                     DisableNextAttack = false;
                     FireBeforeAttack(target);
 
                     if (!DisableNextAttack)
                     {
-                        /*if (!NoCancelChamps.Contains(Player.ChampionName))  
-                        {  
-                            LastAATick = Utils.GameTimeTickCount - Game.Ping - (int)(ObjectManager.Player.AttackCastDelay * 1000f);  
-                            _missileLaunched = false;      
-                        }  */
-
                         Player.IssueOrder(GameObjectOrder.AttackUnit, target);
                         _lastTarget = target;
                         return;
@@ -435,7 +428,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
         private static void MissileClient_OnCreate(GameObject sender, EventArgs args)
         {
             var missile = sender as MissileClient;
-            if (missile != null && missile.SpellCaster.IsMe && IsAutoAttack(missile.SData.Name)) //공식 커먼에서도 문제있던 미사일 부분. 어쩌면 아직 문제소지 남아있을수도
+            if (missile != null && missile.SpellCaster.IsMe && IsAutoAttack(missile.SData.Name))
             {
                 _missileLaunched = true;
             }
@@ -472,10 +465,6 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                             FireOnTargetSwitch(target);
                             _lastTarget = target;
                         }
-
-                        //Trigger it for ranged until the missiles catch normal attacks again!
-                        //Utility.DelayAction.Add(
-                        //(int)(unit.AttackCastDelay * 1000 + 20), () => FireAfterAttack(unit, _lastTarget)); // 임의수정
                     }
                 }
 
@@ -505,14 +494,9 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                         FireOnTargetSwitch(target);
                         _lastTarget = target;
                     }
-                    //_missileLaunched = true;
                     StopMove = false;
                     FireAfterAttack(sender, _lastTarget);
-                    if (args.Target is Obj_AI_Base)
-                    {
-                        //Trigger it for ranged until the missiles catch normal attacks again!
 
-                    }
                 }
             }
             catch (Exception e)
@@ -671,7 +655,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                         return OrbwalkingMode.LastHit;
                     }
 
-                    if (_config.Item("Flee").GetValue<KeyBind>().Active) // Added by RL244
+                    if (_config.Item("Flee").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.Flee;
                     }
@@ -741,7 +725,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                 }
 
                 /*Killable Minion*/
-                if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed && _config.Item("Harass.MLH").GetValue<bool>() || //미니언 킬 하레스..!!
+                if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed && _config.Item("Harass.MLH").GetValue<bool>() ||
                     ActiveMode == OrbwalkingMode.LastHit)
                 {
                     var FreezeActive = _config.Item("Freeze").GetValue<KeyBind>().Active && (ActiveMode != OrbwalkingMode.LaneClear);
@@ -751,13 +735,13 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                                 minion =>
                                     minion.IsValidTarget() && InAutoAttackRange(minion) &&
                                     minion.Health <
-                                    Player.GetAutoAttackDamage2(minion, true) * 2); //좀 병신같았던 Farm 수정. 이전엔 패시브 고려안해서 패시브 데미지 때문에 미니언 버리는 경우도 많았음.
+                                    Player.GetAutoAttackDamage2(minion, true) * 2);
 
 
                     foreach (var minion in MinionList)
                     {
                         var FreezeDamage = Player.GetAutoAttackDamage2(minion, true) * (_config.Item("FreezeHealth").GetValue<Slider>().Value / 100f);
-                        var t = (int)(Player.AttackCastDelay * 1000) - 150 + 1000 * (int)Player.Distance(minion, false) / (int)GetMyProjectileSpeed();
+                        var t = (int)(Player.AttackCastDelay * 1000) - 100 + 1000 * (int)Player.Distance(minion, false) / (int)GetMyProjectileSpeed();
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
 
                         if (FreezeActive && predHealth.Equals(minion.Health))
