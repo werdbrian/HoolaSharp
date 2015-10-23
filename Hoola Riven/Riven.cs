@@ -35,6 +35,7 @@ namespace HoolaRiven
         private static bool KeepQ { get { return Menu.Item("KeepQ").GetValue<bool>(); } }
         private static int QD { get { return Menu.Item("QD").GetValue<Slider>().Value; } }
         private static int QLD { get { return Menu.Item("QLD").GetValue<Slider>().Value; } }
+        private static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
 
         public Riven()
         {
@@ -67,6 +68,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(orbwalker);
             var Misc = new Menu("Misc", "Misc");
 
+            Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
             Misc.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic").SetValue(new KeyBind('L', KeyBindType.Toggle)));
             Misc.AddItem(new MenuItem("killstealw", "Killsteal W").SetValue(true));
             Misc.AddItem(new MenuItem("killstealr", "Killsteal Second R").SetValue(true));
@@ -399,6 +401,27 @@ namespace HoolaRiven
 
         static void statereset()
         {
+            if (AutoW > 0)
+            {
+                float wrange = 0;
+                if (Player.HasBuff("RivenFengShuiEngine"))
+                {
+                    wrange = 195 + Player.BoundingRadius;
+                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
+                    {
+                        W.Cast();
+                    }
+                }
+                else
+                {
+                    wrange = 120 + Player.BoundingRadius;
+                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
+                    {
+                        W.Cast();
+                    }
+                }
+
+            }
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
             if (forceQ == true && Orbwalking.CanMove(10))
