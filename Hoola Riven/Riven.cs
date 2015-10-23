@@ -322,7 +322,6 @@ namespace HoolaRiven
         static void Flee()
         {
             Orbwalker.SetAttack(false);
-            Player.IssueOrder(GameObjectOrder.MoveTo, Game.CursorPos);
             var x = Player.Position.Extend(Game.CursorPos, 300);
             if (Q.IsReady() && !Player.IsDashing()) Q.Cast(x);
             if (E.IsReady() && !Player.IsDashing()) E.Cast(x);
