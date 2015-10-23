@@ -235,11 +235,17 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
         /// </summary>
         public static float GetRealAutoAttackRange(AttackableUnit target)
         {
-            var result = target.AttackRange + target.BoundingRadius;
+            var result = Player.AttackRange + Player.BoundingRadius;
             if (target.IsValidTarget())
             {
                 return result + target.BoundingRadius;
             }
+            return result;
+        }
+
+        public static float GetAttackRange(Obj_AI_Hero target)
+        {
+            var result = target.AttackRange + target.BoundingRadius;
             return result;
         }
 
@@ -909,7 +915,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
                         HeroManager.Enemies.FindAll(target => target.IsValidTarget(1175)))
                     {
                         Render.Circle.DrawCircle(
-                            target.Position, GetRealAutoAttackRange(target) + 0,
+                            target.Position, GetAttackRange(target) + 0,
                             _config.Item("AACircle2").GetValue<Circle>().Color, 3);
                     }
                 }
