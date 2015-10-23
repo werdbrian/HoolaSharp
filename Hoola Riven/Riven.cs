@@ -193,7 +193,7 @@ namespace HoolaRiven
                 if (Dind)
                 {
                     Indicator.unit = enemy;
-                Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(0, 255, 255, 120));
+                Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
                 }
                 
             }
