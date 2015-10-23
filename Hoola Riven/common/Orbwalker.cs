@@ -235,7 +235,7 @@ namespace HoolaRiven //Edited Orbwalking.cs for TeamProjects AIO
         /// </summary>
         public static float GetRealAutoAttackRange(AttackableUnit target)
         {
-            var result = Player.AttackRange + Player.BoundingRadius;
+            var result = target.AttackRange + target.BoundingRadius;
             if (target.IsValidTarget())
             {
                 return result + target.BoundingRadius;
