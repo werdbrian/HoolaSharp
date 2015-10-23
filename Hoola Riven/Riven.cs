@@ -582,7 +582,30 @@ namespace HoolaRiven
                     forcecastQ(QTarget);
                 }
                 else if (Q.IsReady()) Q.Cast(target.Position);
-                else if (W.IsReady() && InWRange(target)) W.Cast();
+                else if (W.IsReady())
+                {
+                    float wrange = 0;
+                    if (Player.HasBuff("RivenFengShuiEngine"))
+                    {
+                        wrange = 195 + Player.BoundingRadius + 70;
+                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
+                        if (Minions[0].IsValidTarget() && Minions.Count <= 3 &&
+                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                        {
+                            W.Cast();
+                        }
+                    }
+                    else
+                    {
+                        wrange = 120 + Player.BoundingRadius + 70;
+                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
+                        if (Minions[0].IsValidTarget() && Minions.Count <= 3 &&
+                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                        {
+                            W.Cast();
+                        }
+                    }
+                }
                 else if (E.IsReady()) E.Cast(target.Position);
             }
         }
