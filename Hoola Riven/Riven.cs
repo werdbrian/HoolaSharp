@@ -38,6 +38,7 @@ namespace HoolaRiven
         private static int QLD { get { return Menu.Item("QLD").GetValue<Slider>().Value; } }
         private static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
         private static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
+        private static bool RMaxDam { get { return Menu.Item("RMaxDam").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -79,6 +80,7 @@ namespace HoolaRiven
             var Misc = new Menu("Misc", "Misc");
 
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
+            Misc.AddItem(new MenuItem("RMaxDam", "Use Second R Max Damage").SetValue(true));
             Misc.AddItem(new MenuItem("killstealw", "Killsteal W").SetValue(true));
             Misc.AddItem(new MenuItem("killstealr", "Killsteal Second R").SetValue(true));
             Misc.AddItem(new MenuItem("AutoShield", "Auto Cast E").SetValue(true));
@@ -180,6 +182,18 @@ namespace HoolaRiven
                 }
             }
         }
+        static void UseRMaxDam()
+        {
+            if (RMaxDam && R.IsReady() && R.Instance.Name == IsSecondR)
+            {
+                var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
+                foreach (var target in targets)
+                {
+                    if (target.HealthPercent <= 25)
+                        R.Cast(target.Position);
+                }
+            }
+        }
 
         static void Drawing_OnDraw(EventArgs args)
         {
@@ -234,8 +248,8 @@ namespace HoolaRiven
                 R.Cast();
                 UseW(500);
             }
-            else if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            else if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+            if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
+            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
              && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
