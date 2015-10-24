@@ -229,13 +229,13 @@ namespace HoolaRiven
         static void Combo()
         {
             var targetR = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-            if (R.IsReady() && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR)
+            if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR)
             {
                 R.Cast();
                 UseW(500);
             }
             if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            if (UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
              && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
@@ -246,7 +246,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
              && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
