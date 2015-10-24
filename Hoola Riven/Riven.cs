@@ -30,6 +30,7 @@ namespace HoolaRiven
         private static bool DrawHS { get { return Menu.Item("DrawHS").GetValue<bool>(); } }
         private static bool DrawBT { get { return Menu.Item("DrawBT").GetValue<bool>(); } }
         private static bool UseHoola { get { return Menu.Item("UseHoola").GetValue<KeyBind>().Active; } }
+        private static bool AlwaysR { get { return Menu.Item("AlwaysR").GetValue<KeyBind>().Active; } }
         private static bool AutoShield { get { return Menu.Item("AutoShield").GetValue<bool>(); } }
         private static bool Shield { get { return Menu.Item("Shield").GetValue<bool>(); } }
         private static bool KeepQ { get { return Menu.Item("KeepQ").GetValue<bool>(); } }
@@ -69,7 +70,8 @@ namespace HoolaRiven
             Menu.AddSubMenu(orbwalker);
             var Combo = new Menu("Combo", "Combo");
 
-            Combo.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic").SetValue(new KeyBind('L', KeyBindType.Toggle)));
+            Combo.AddItem(new MenuItem("AlwaysR", "Always Use R (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
+            Combo.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic (Toggle)").SetValue(new KeyBind('L', KeyBindType.Toggle)));
             Combo.AddItem(new MenuItem("ComboW", "Always use W").SetValue(true));
 
 
@@ -225,26 +227,31 @@ namespace HoolaRiven
         static void Combo()
         {
             var targetR = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
+            if (R.IsReady() && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR)
+            {
+                R.Cast();
+                UseW(500);
+            }
             if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            if (UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && ((totaldame(targetR) >= targetR.Health
-             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2))
+            if (UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
                     E.Cast(targetR.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(280, () => W.Cast());
+                    Utility.DelayAction.Add(50, () => UseW(270));
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && ((totaldame(targetR) >= targetR.Health
-             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2))
+            else if (!UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
                     E.Cast(targetR.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(300, () => W.Cast());
+                    Utility.DelayAction.Add(50, () => UseW(300));
                 }
             }
             else if (UseHoola && W.IsReady() && E.IsReady())
@@ -254,7 +261,7 @@ namespace HoolaRiven
                 {
                     E.Cast(target.Position);
                     Utility.DelayAction.Add(10, () => CastItem());
-                    Utility.DelayAction.Add(280, () => W.Cast());
+                    Utility.DelayAction.Add(50, () => UseW(500));
                     Utility.DelayAction.Add(310, () => forcecastQ(target));
                 }
             }
@@ -265,7 +272,7 @@ namespace HoolaRiven
                 {
                     E.Cast(target.Position);
                     Utility.DelayAction.Add(10, () => CastItem());
-                    Utility.DelayAction.Add(280, () => W.Cast());
+                    Utility.DelayAction.Add(50, () => UseW(500));
                 }
             }
             else if (E.IsReady())
@@ -633,7 +640,8 @@ namespace HoolaRiven
         {
             for (int i = 0; i < t; i = i + 1)
             {
-                Utility.DelayAction.Add(i, () => W.Cast());
+                if (W.IsReady())
+                    Utility.DelayAction.Add(i, () => W.Cast());
             }
         }
 
