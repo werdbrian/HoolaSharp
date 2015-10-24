@@ -610,7 +610,7 @@ namespace HoolaRiven
             QTarget = target;
             if (!unit.IsMe && target != null) return;
 
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_AI_BarracksDampener))
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
             {
                 if (Q.IsReady())
                     forcecastQ(QTarget);
