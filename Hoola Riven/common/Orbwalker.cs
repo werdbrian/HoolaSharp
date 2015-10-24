@@ -377,7 +377,6 @@ namespace HoolaRiven
         /// </summary>
         public static void Orbwalk(AttackableUnit target,
             Vector3 position,
-            float extraWindup,
             float extraMoveup = 0,
             float holdAreaRadius = 0,
             bool useFixedDistance = true,
