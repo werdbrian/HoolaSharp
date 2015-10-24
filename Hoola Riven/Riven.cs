@@ -202,7 +202,7 @@ namespace HoolaRiven
             var heropos = Drawing.WorldToScreen(ObjectManager.Player.Position);
 
             if (DrawCB) Render.Circle.DrawCircle(Player.Position, 250 + Player.AttackRange + 70, E.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 830, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 800, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Cyan, AlwaysR ? "Always R On" : "Always R Off");
@@ -304,14 +304,14 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830 && !FirstHydra)
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && !FirstHydra)
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
                     Utility.DelayAction.Add(160, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830 && FirstHydra)
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && FirstHydra)
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
