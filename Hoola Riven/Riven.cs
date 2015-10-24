@@ -96,7 +96,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
-            Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(true));
+            Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(false));
             Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
             Misc.AddItem(new MenuItem("RMaxDam", "Use Second R Max Damage").SetValue(true));
