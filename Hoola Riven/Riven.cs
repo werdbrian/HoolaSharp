@@ -257,7 +257,7 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(120, () => UseW(270));
+                    Utility.DelayAction.Add(170, () => UseW(270));
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
@@ -267,7 +267,7 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(120, () => UseW(300));
+                    Utility.DelayAction.Add(170, () => UseW(300));
                 }
             }
             else if (UseHoola && W.IsReady() && E.IsReady())
@@ -276,7 +276,7 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
-                    Utility.DelayAction.Add(120, () => UseW(500));
+                    Utility.DelayAction.Add(170, () => UseW(500));
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
@@ -286,7 +286,7 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
-                    Utility.DelayAction.Add(120, () => UseW(500));
+                    Utility.DelayAction.Add(170, () => UseW(500));
                 }
             }
             else if (E.IsReady())
