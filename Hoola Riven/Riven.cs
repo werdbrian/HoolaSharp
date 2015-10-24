@@ -666,6 +666,44 @@ namespace HoolaRiven
                     }
                 }
                 else if (E.IsReady() && LaneE) E.Cast(target.Position);
+                if (Q.IsReady() && HasItem())
+                {
+                    var Mobs = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                    if (Mobs[0].IsValidTarget() && Mobs.Count >= 1 &&
+                        Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                    {
+                        CastItem();
+                        forcecastQ(QTarget);
+                    }
+                }
+                if (W.IsReady())
+                {
+                    var Mobs = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                    float wrange = 0;
+                    if (Player.HasBuff("RivenFengShuiEngine"))
+                    {
+                        wrange = 195 + Player.BoundingRadius + 70;
+                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                        if (Minions[0].IsValidTarget() && Minions.Count >= 1 &&
+                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                        {
+                            W.Cast();
+                        }
+                    }
+                    else
+                    {
+                        wrange = 120 + Player.BoundingRadius + 70;
+                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                        if (Minions[0].IsValidTarget() && Minions.Count >= 1 && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                        {
+                            W.Cast();
+                        }
+                    }
+                    if (Mobs[0].IsValidTarget() && Mobs.Count >= 1)
+                    {
+                        E.Cast(Mobs[0].Position);
+                    }
+                }
             }
         }
 
