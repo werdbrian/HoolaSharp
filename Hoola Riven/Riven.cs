@@ -303,14 +303,14 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && !FirstHydra)
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && (!FirstHydra || (FirstHydra && !HasItem())))
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
                     Utility.DelayAction.Add(160, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && FirstHydra)
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && FirstHydra && HasItem())
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
