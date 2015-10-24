@@ -323,7 +323,7 @@ namespace HoolaRiven
         }
 
         public static void MoveTo(Vector3 position,
-            float holdAreaRadius = 70,
+            float holdAreaRadius = 0,
             bool overrideTimer = false,
             bool useFixedDistance = false,
             bool randomizeMinDistance = false)
@@ -393,6 +393,7 @@ namespace HoolaRiven
                     {
                         Player.IssueOrder(GameObjectOrder.AttackUnit, target);
                         _lastTarget = target;
+                        _missileLaunched = false;
                         return;
                     }
                 }
