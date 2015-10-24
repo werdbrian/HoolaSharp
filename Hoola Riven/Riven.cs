@@ -39,6 +39,7 @@ namespace HoolaRiven
         private static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
         private static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
         private static bool RMaxDam { get { return Menu.Item("RMaxDam").GetValue<bool>(); } }
+        private static bool RKillable { get { return Menu.Item("RKillable").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -74,6 +75,7 @@ namespace HoolaRiven
             Combo.AddItem(new MenuItem("AlwaysR", "Always Use R (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
             Combo.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic (Toggle)").SetValue(new KeyBind('L', KeyBindType.Toggle)));
             Combo.AddItem(new MenuItem("ComboW", "Always use W").SetValue(true));
+            Combo.AddItem(new MenuItem("RKillable", "Use R When Target Can Killable").SetValue(true));
 
 
             Menu.AddSubMenu(Combo);
@@ -249,8 +251,7 @@ namespace HoolaRiven
                 UseW(500);
             }
             if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
-             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
+            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -260,8 +261,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
-             && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
+            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -933,6 +933,15 @@ namespace HoolaRiven
             else return 0;
         }
 
+        static bool IsKillableR(Obj_AI_Hero target)
+        {
+            if (RKillable && target.IsValidTarget() && (totaldame(target) >= target.Health
+                 && basicdmg(target) <= target.Health) || Player.CountEnemiesInRange(900) >= 2)
+            {
+                return true;
+            }
+            else return false;
+        }
         static double totaldame(Obj_AI_Base target)
         {
             if (target != null)
