@@ -45,6 +45,8 @@ namespace HoolaRiven
 
         public Riven()
         {
+            if (Player.ChampionName != "Riven") return;
+            Game.PrintChat("Hoola Riven - Loaded Successfully, Good Luck! :)");
             Q = new Spell(SpellSlot.Q);
             W = new Spell(SpellSlot.W);
             E = new Spell(SpellSlot.E, 300);
