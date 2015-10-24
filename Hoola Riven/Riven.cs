@@ -164,6 +164,7 @@ namespace HoolaRiven
         static void Game_OnGameUpdate(EventArgs args)
         {
             statereset();
+            UseRMaxDam();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo) Combo();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst) Burst();
@@ -190,7 +191,7 @@ namespace HoolaRiven
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Rdame(target, target.Health))
+                    if (target.Health < Rdame(target, target.Health) && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
                         R.Cast(target.Position);
                 }
             }
@@ -202,7 +203,7 @@ namespace HoolaRiven
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.HealthPercent <= 25)
+                    if (target.HealthPercent <= 25 && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
                         R.Cast(target.Position);
                 }
             }
@@ -915,6 +916,8 @@ namespace HoolaRiven
             }
             else { return 0; }
         }
+
+
         static float getComboDamage(Obj_AI_Base enemy)
         {
             if (enemy != null)
@@ -949,7 +952,7 @@ namespace HoolaRiven
         static bool IsKillableR(Obj_AI_Hero target)
         {
             if (RKillable && target.IsValidTarget() && (totaldame(target) >= target.Health
-                 && basicdmg(target) <= target.Health) || Player.CountEnemiesInRange(900) >= 2)
+                 && basicdmg(target) <= target.Health) || Player.CountEnemiesInRange(900) >= 2 && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
             {
                 return true;
             }
