@@ -505,13 +505,14 @@ namespace HoolaRiven
         {
             if (!sender.IsMe) return;
 
-            if (args.SData.Name == "RivenTriCleave")
+            if (args.SData.Name.Contains("RivenTriCleave"))
             {
                 forceQ = false;
                 lastQ = Utils.GameTimeTickCount;
                 if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Game.Say("/d");
                 QStack += 1;
             }
+            if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)) CastYoumoo();
             if (args.SData.Name.Contains("rivenizunablade"))
             {
                 var target = TargetSelector.GetSelectedTarget();
@@ -555,7 +556,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(40) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(50) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
@@ -626,6 +627,11 @@ namespace HoolaRiven
                 ItemData.Tiamat_Melee_Only.GetItem().Cast();
             if (ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
                 ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
+        }
+        static void CastYoumoo()
+        {
+            if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
+                ItemData.Youmuus_Ghostblade.GetItem().Cast();
         }
         static void OnCasting(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
