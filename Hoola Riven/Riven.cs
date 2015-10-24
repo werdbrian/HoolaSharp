@@ -318,7 +318,7 @@ namespace HoolaRiven
             var heropos = Drawing.WorldToScreen(ObjectManager.Player.Position);
 
             if (DrawCB) Render.Circle.DrawCircle(Player.Position, 250 + Player.AttackRange + 70, E.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 900, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 850, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 450 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 400, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Cyan, AlwaysR ? "Always R On" : "Always R Off");
@@ -423,14 +423,14 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 900 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && (!FirstHydra || (FirstHydra && !HasItem())))
+                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 850 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && (!FirstHydra || (FirstHydra && !HasItem())))
                 {
                     E.Cast(target.Position);
                     R.Cast();
                     Utility.DelayAction.Add(220, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 900 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && FirstHydra && HasItem())
+                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 850 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && FirstHydra && HasItem())
                 {
                     E.Cast(target.Position);
                     R.Cast();
@@ -574,7 +574,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(10) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(5) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
