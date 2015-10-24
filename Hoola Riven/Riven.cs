@@ -17,7 +17,7 @@ namespace HoolaRiven
         private static string IsSecondR = "rivenizunablade";
         private static SpellSlot Flash = Player.GetSpellSlot("summonerFlash");
         private static HpBarIndicator Indicator = new HpBarIndicator();
-        private static Spell Q, W, E, R;
+        private static Spell Q, Q1, W, E, R;
         private static int QStack = 1;
         private static bool forceQ;
         private static float lastQ;
@@ -190,7 +190,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
-            Misc.AddItem(new MenuItem("FirstHydra", "Burst Hydra Cast before W").SetValue(false));
+            Misc.AddItem(new MenuItem("FirstHydra", "Flash Burst Hydra Cast before W").SetValue(false));
             Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(false));
             Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
@@ -318,9 +318,9 @@ namespace HoolaRiven
             var heropos = Drawing.WorldToScreen(ObjectManager.Player.Position);
 
             if (DrawCB) Render.Circle.DrawCircle(Player.Position, 250 + Player.AttackRange + 70, E.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 800, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 900, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawFH) Render.Circle.DrawCircle(Player.Position, 450 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawHS) Render.Circle.DrawCircle(Player.Position, 400, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Cyan, AlwaysR ? "Always R On" : "Always R Off");
             if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Cyan, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
         }
@@ -423,19 +423,37 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && (!FirstHydra || (FirstHydra && !HasItem())))
+                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 900 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && (!FirstHydra || (FirstHydra && !HasItem())))
                 {
-                    E.Cast(Player.Position.Extend(target.Position, 200));
+                    E.Cast(target.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(160, () => FlashW());
+                    Utility.DelayAction.Add(220, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 800 && FirstHydra && HasItem())
+                    && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 900 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && FirstHydra && HasItem())
                 {
-                    E.Cast(Player.Position.Extend(target.Position, 200));
+                    E.Cast(target.Position);
                     R.Cast();
                     UseCastItem(200);
                     Utility.DelayAction.Add(230, () => FlashW());
+                }
+                else if (R.IsReady() && R.Instance.Name == IsFirstR &&
+                         (Player.Distance(target.Position) < 450 + Player.AttackRange + 70 &&
+                          Player.Distance(target.Position) >= 320 + Player.AttackRange + 70) && Q.IsReady() && W.IsReady())
+                {
+                    E.Cast(target.Position);
+                    R.Cast();
+                    Utility.DelayAction.Add(200, () => Q.Cast(target.ServerPosition));
+                    Utility.DelayAction.Add(300, () => UseW(1000));
+
+                }
+                else if (R.IsReady() && R.Instance.Name == IsFirstR &&
+                         Player.Distance(target.Position) < 320 + Player.AttackRange + 70 && Q.IsReady() && W.IsReady())
+                {
+                    E.Cast(target.Position);
+                    R.Cast();
+                    Utility.DelayAction.Add(180, () => UseW(1000));
+
                 }
             }
         }
@@ -444,24 +462,24 @@ namespace HoolaRiven
         {
             if (Q.IsReady() && E.IsReady())
             {
-                var target = TargetSelector.GetTarget(340 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
+                var target = TargetSelector.GetTarget(450 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
                 if (target.IsValidTarget() && !target.IsZombie)
                 {
                     if (!Orbwalking.InAutoAttackRange(target) && !InWRange(target)) E.Cast(target.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
-                    Utility.DelayAction.Add(130, () => forcecastQ(target));
+                    Utility.DelayAction.Add(170, () => Q.Cast(target.ServerPosition));
                 }
             }
         }
 
         static void Harass()
         {
-            var target = TargetSelector.GetTarget(310, TargetSelector.DamageType.Physical);
+            var target = TargetSelector.GetTarget(400, TargetSelector.DamageType.Physical);
             if (Q.IsReady() && W.IsReady() && E.IsReady() && QStack == 1)
             {
                 if (target.IsValidTarget() && !target.IsZombie)
                 {
-                    Q.Cast(target.Position);
+                    Q.Cast(target.ServerPosition);
                     UseW(1000);
                 }
             }
@@ -556,7 +574,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(60) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(10) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
