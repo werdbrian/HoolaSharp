@@ -45,6 +45,7 @@ namespace HoolaRiven
         private static int LaneW { get { return Menu.Item("LaneW").GetValue<Slider>().Value; } }
         private static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
         private static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
+        private static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -95,6 +96,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
+            Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(true));
             Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
             Misc.AddItem(new MenuItem("RMaxDam", "Use Second R Max Damage").SetValue(true));
@@ -135,7 +137,7 @@ namespace HoolaRiven
 
         public static void interrupt(Obj_AI_Hero sender, Interrupter2.InterruptableTargetEventArgs args)
         {
-            if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && Menu.Item("W interrupt").GetValue<bool>())
+            if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && Menu.Item("Winterrupt").GetValue<bool>())
             {
                 if (sender.IsValidTarget(125 + Player.BoundingRadius + sender.BoundingRadius)) W.Cast();
             }
@@ -199,8 +201,8 @@ namespace HoolaRiven
             if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 830, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, AlwaysR ? "Always R On" : "Always R Off");
-            if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Red, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
+            if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Cyan, AlwaysR ? "Always R On" : "Always R Off");
+            if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Cyan, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
         }
 
         private static void Drawing_OnEndScene(EventArgs args)
@@ -359,15 +361,12 @@ namespace HoolaRiven
                 switch (args.Animation)
                 {
                     case "Spell1a":
-                        Utility.DelayAction.Add((QD * 9) + 1, () => Reset());
                         Utility.DelayAction.Add((QD * 10) + 1, () => Reset());
                         break;
                     case "Spell1b":
-                        Utility.DelayAction.Add((QD * 9) + 1, () => Reset());
                         Utility.DelayAction.Add((QD * 10) + 1, () => Reset());
                         break;
                     case "Spell1c":
-                        Utility.DelayAction.Add((QLD * 9) + 3, () => Reset());
                         Utility.DelayAction.Add((QLD * 10) + 3, () => Reset());
                         break;
                 }
@@ -382,6 +381,7 @@ namespace HoolaRiven
             {
                 forceQ = false;
                 lastQ = Utils.GameTimeTickCount;
+                if (Qstrange) Game.Say("/d");
                 QStack += 1;
             }
             if (args.SData.Name.Contains("rivenizunablade"))
