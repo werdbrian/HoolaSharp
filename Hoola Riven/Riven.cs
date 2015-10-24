@@ -86,8 +86,8 @@ namespace HoolaRiven
             Misc.AddItem(new MenuItem("AutoShield", "Auto Cast E").SetValue(true));
             Misc.AddItem(new MenuItem("Shield", "Auto Cast E While LastHit").SetValue(true));
             Misc.AddItem(new MenuItem("KeepQ", "Keep Q Alive").SetValue(true));
-            Misc.AddItem(new MenuItem("QD", "First,Second Q Delay").SetValue(new Slider(26, 23, 43)));
-            Misc.AddItem(new MenuItem("QLD", "Third Q Delay").SetValue(new Slider(36, 36, 53)));
+            Misc.AddItem(new MenuItem("QD", "First,Second Q Delay").SetValue(new Slider(29, 23, 43)));
+            Misc.AddItem(new MenuItem("QLD", "Third Q Delay").SetValue(new Slider(39, 36, 53)));
 
 
             Menu.AddSubMenu(Misc);
