@@ -65,7 +65,6 @@ namespace HoolaRiven
             Orbwalking.AfterAttack += Orbwalking_AfterAttacklc;
             Obj_AI_Base.OnProcessSpellCast += OnCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
-            Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnProcessSpellCast += OnCasting;
             Interrupter2.OnInterruptableTarget += interrupt;
         }
@@ -139,40 +138,6 @@ namespace HoolaRiven
             if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && Menu.Item("W interrupt").GetValue<bool>())
             {
                 if (sender.IsValidTarget(125 + Player.BoundingRadius + sender.BoundingRadius)) W.Cast();
-            }
-        }
-
-        private static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-            if (!sender.IsMe) return;
-
-            if (Orbwalking.IsAutoAttack(args.SData.Name))
-            {
-                if ((args.Target is Obj_AI_Base || args.Target is Obj_BarracksDampener || args.Target is Obj_HQ))
-                {
-                    if (args.Target is Obj_AI_Base)
-                    {
-                        var target = (Obj_AI_Base)args.Target;
-                        var targets = TargetSelector.GetTarget(310, TargetSelector.DamageType.Physical);
-                        var Minions = MinionManager.GetMinions(310, MinionTypes.All, MinionTeam.Enemy);
-                        if (target.IsValid && Q.IsReady() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            forcecastQ(target);
-                        }
-                        else if (targets.IsValid && Q.IsReady() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            forcecastQ(targets);
-                        }
-                        else if (Minions[0].IsValidTarget() && Minions.Count <= 0 && Q.IsReady() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            forcecastQ(Minions[0]);
-                        }
-                        else if (target == null && targets == null && Minions.Count <= 0 && Q.IsReady() && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            Q.Cast(Game.CursorPos);
-                        }
-                    }
-                }
             }
         }
 
