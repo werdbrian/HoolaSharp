@@ -26,6 +26,8 @@ namespace HoolaRiven
         private static bool DrawCB { get { return Menu.Item("DrawCB").GetValue<bool>(); } }
         private static bool KillstealW { get { return Menu.Item("killstealw").GetValue<bool>(); } }
         private static bool KillstealR { get { return Menu.Item("killstealr").GetValue<bool>(); } }
+        private static bool DrawAlwaysR { get { return Menu.Item("DrawAlwaysR").GetValue<bool>(); } }
+        private static bool DrawUseHoola { get { return Menu.Item("DrawUseHoola").GetValue<bool>(); } }
         private static bool DrawFH { get { return Menu.Item("DrawFH").GetValue<bool>(); } }
         private static bool DrawHS { get { return Menu.Item("DrawHS").GetValue<bool>(); } }
         private static bool DrawBT { get { return Menu.Item("DrawBT").GetValue<bool>(); } }
@@ -107,6 +109,8 @@ namespace HoolaRiven
 
             var Draw = new Menu("Draw", "Draw");
 
+            Draw.AddItem(new MenuItem("DrawAlwaysR", "Draw Always R Status").SetValue(true));
+            Draw.AddItem(new MenuItem("DrawUseHoola", "Draw Hoola Logic Status").SetValue(true));
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
             Draw.AddItem(new MenuItem("DrawCB", "Draw Combo Engage Range").SetValue(true));
             Draw.AddItem(new MenuItem("DrawBT", "Draw Burst Engage Range").SetValue(true));
@@ -219,8 +223,8 @@ namespace HoolaRiven
             if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 830, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (AlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, "Always R On");
-            Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Red, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
+            if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, DrawAlwaysR ? "Always R On" : "Always R Off");
+            if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Red, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
         }
 
         private static void Drawing_OnEndScene(EventArgs args)
