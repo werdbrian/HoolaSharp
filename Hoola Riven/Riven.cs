@@ -530,7 +530,7 @@ namespace HoolaRiven
                 if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Game.Say("/d");
                 QStack += 1;
             }
-            if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)) CastYoumoo();
+            if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)) if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear) CastYoumoo();
             if (args.SData.Name.Contains("rivenizunablade"))
             {
                 var target = TargetSelector.GetSelectedTarget();
