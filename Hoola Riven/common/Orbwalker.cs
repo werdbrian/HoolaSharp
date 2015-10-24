@@ -323,7 +323,7 @@ namespace HoolaRiven
         }
 
         public static void MoveTo(Vector3 position,
-            float holdAreaRadius = 0,
+            float holdAreaRadius = 70,
             bool overrideTimer = false,
             bool useFixedDistance = false,
             bool randomizeMinDistance = false)
