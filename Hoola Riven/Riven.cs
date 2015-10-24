@@ -219,6 +219,7 @@ namespace HoolaRiven
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (AlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, "Always R On");
+            if (UseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Red, "Hoola Logic On");
         }
 
         private static void Drawing_OnEndScene(EventArgs args)
