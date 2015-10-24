@@ -47,6 +47,7 @@ namespace HoolaRiven
         private static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
         private static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
         private static bool FirstHydra { get { return Menu.Item("FirstHydra").GetValue<bool>(); } }
+        private static bool LaneQ { get { return Menu.Item("LaneQ").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -89,6 +90,7 @@ namespace HoolaRiven
 
             Menu.AddSubMenu(Combo);
             var Lane = new Menu("Lane", "Lane");
+            Lane.AddItem(new MenuItem("LaneQ", "Use Q While Laneclear").SetValue(true));
             Lane.AddItem(new MenuItem("LaneW", "Use W X Minion").SetValue(new Slider(5, 0, 5)));
             Lane.AddItem(new MenuItem("LaneE", "Use E While Laneclear").SetValue(true));
 
@@ -598,12 +600,12 @@ namespace HoolaRiven
             QTarget = target;
             if (!unit.IsMe && target != null) return;
 
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
             {
                 if (Q.IsReady())
                     forcecastQ(QTarget);
             }
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ)
             {
                 if (target is Obj_Building || target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_BarracksDampener)
                     return;
@@ -612,7 +614,6 @@ namespace HoolaRiven
                     UseCastItem(300);
                     forcecastQ(QTarget);
                 }
-                else if (Q.IsReady()) Q.Cast(target.Position);
                 else if (W.IsReady())
                 {
                     float wrange = 0;
