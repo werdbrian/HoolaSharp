@@ -44,6 +44,7 @@ namespace HoolaRiven
         private static bool RKillable { get { return Menu.Item("RKillable").GetValue<bool>(); } }
         private static int LaneW { get { return Menu.Item("LaneW").GetValue<Slider>().Value; } }
         private static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
+        private static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -66,6 +67,7 @@ namespace HoolaRiven
             Obj_AI_Base.OnPlayAnimation += OnPlay;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnProcessSpellCast += OnCasting;
+            Interrupter2.OnInterruptableTarget += interrupt;
         }
 
         private static void OnMenuLoad()
@@ -94,6 +96,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
+            Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
             Misc.AddItem(new MenuItem("RMaxDam", "Use Second R Max Damage").SetValue(true));
             Misc.AddItem(new MenuItem("killstealw", "Killsteal W").SetValue(true));
@@ -129,6 +132,14 @@ namespace HoolaRiven
             Menu.AddSubMenu(Credit);
 
             Menu.AddToMainMenu();
+        }
+
+        public static void interrupt(Obj_AI_Hero sender, Interrupter2.InterruptableTargetEventArgs args)
+        {
+            if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && Menu.Item("W interrupt").GetValue<bool>())
+            {
+                if (sender.IsValidTarget(125 + Player.BoundingRadius + sender.BoundingRadius)) W.Cast();
+            }
         }
 
         private static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
