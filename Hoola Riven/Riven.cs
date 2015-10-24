@@ -36,6 +36,7 @@ namespace HoolaRiven
         private static int QD { get { return Menu.Item("QD").GetValue<Slider>().Value; } }
         private static int QLD { get { return Menu.Item("QLD").GetValue<Slider>().Value; } }
         private static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
+        private static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -66,10 +67,16 @@ namespace HoolaRiven
             var orbwalker = new Menu("Orbwalk", "rorb");
             Orbwalker = new Orbwalking.Orbwalker(orbwalker);
             Menu.AddSubMenu(orbwalker);
+            var Combo = new Menu("Combo", "Combo");
+
+            Combo.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic").SetValue(new KeyBind('L', KeyBindType.Toggle)));
+            Combo.AddItem(new MenuItem("ComboW", "Always use W").SetValue(true));
+
+
+            Menu.AddSubMenu(Combo);
             var Misc = new Menu("Misc", "Misc");
 
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
-            Misc.AddItem(new MenuItem("UseHoola", "Use Hoola Combo Logic").SetValue(new KeyBind('L', KeyBindType.Toggle)));
             Misc.AddItem(new MenuItem("killstealw", "Killsteal W").SetValue(true));
             Misc.AddItem(new MenuItem("killstealr", "Killsteal Second R").SetValue(true));
             Misc.AddItem(new MenuItem("AutoShield", "Auto Cast E").SetValue(true));
@@ -176,11 +183,11 @@ namespace HoolaRiven
         {
             if (Player.IsDead)
                 return;
-            
-                if (DrawCB) Render.Circle.DrawCircle(Player.Position, 250 + Player.AttackRange + 70, E.IsReady() ? Color.FromArgb(120,0,170,255) : Color.IndianRed);
-                if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 870, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-                if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-                if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+
+            if (DrawCB) Render.Circle.DrawCircle(Player.Position, 250 + Player.AttackRange + 70, E.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 870, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
+            if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
         }
 
         private static void Drawing_OnEndScene(EventArgs args)
@@ -193,9 +200,9 @@ namespace HoolaRiven
                 if (Dind)
                 {
                     Indicator.unit = enemy;
-                Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
+                    Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
                 }
-                
+
             }
         }
 
@@ -218,6 +225,7 @@ namespace HoolaRiven
         static void Combo()
         {
             var targetR = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
+            if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
             if (UseHoola && R.IsReady() && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && ((totaldame(targetR) >= targetR.Health
              && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2))
             {
@@ -378,12 +386,12 @@ namespace HoolaRiven
             if (Player.HasBuff("RivenFengShuiEngine"))
             {
                 return
-                    target.BoundingRadius + 195 + Player.BoundingRadius >= Player.Distance(target.Position);
+                    70 + 195 + Player.BoundingRadius >= Player.Distance(target.Position);
             }
             else
             {
                 return
-                   target.BoundingRadius + 120 + Player.BoundingRadius >= Player.Distance(target.Position);
+                   70 + 120 + Player.BoundingRadius >= Player.Distance(target.Position);
             }
         }
 
