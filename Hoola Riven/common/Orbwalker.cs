@@ -328,7 +328,7 @@ namespace HoolaRiven
             bool useFixedDistance = false,
             bool randomizeMinDistance = false)
         {
-            if (Utils.GameTimeTickCount - LastMoveCommandT < 0 && !overrideTimer)
+            if (Utils.GameTimeTickCount - LastMoveCommandT < _delay && !overrideTimer)
             {
                 return;
             }

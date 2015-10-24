@@ -46,6 +46,7 @@ namespace HoolaRiven
         private static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
         private static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
         private static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
+        private static bool FirstHydra { get { return Menu.Item("FirstHydra").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -96,6 +97,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
+            Misc.AddItem(new MenuItem("FirstHydra", "Burst Hydra Cast before W").SetValue(false));
             Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(false));
             Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
@@ -137,7 +139,7 @@ namespace HoolaRiven
 
         public static void interrupt(Obj_AI_Hero sender, Interrupter2.InterruptableTargetEventArgs args)
         {
-            if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && Menu.Item("Winterrupt").GetValue<bool>())
+            if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && WInterrupt)
             {
                 if (sender.IsValidTarget(125 + Player.BoundingRadius + sender.BoundingRadius)) W.Cast();
             }
@@ -232,8 +234,8 @@ namespace HoolaRiven
             if (W.IsReady() && E.IsReady() && !Orbwalking.InAutoAttackRange(Mobs[0]))
             {
                 E.Cast(Mobs[0].Position);
-                Utility.DelayAction.Add(10, () => CastItem());
-                Utility.DelayAction.Add(250, () => W.Cast());
+                Utility.DelayAction.Add(10, () => UseCastItem(300));
+                Utility.DelayAction.Add(170, () => UseW(300));
             }
         }
 
@@ -272,7 +274,7 @@ namespace HoolaRiven
                 if (target.IsValidTarget() && !target.IsZombie && !InWRange(target))
                 {
                     E.Cast(target.Position);
-                    Utility.DelayAction.Add(10, () => CastItem());
+                    Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(120, () => UseW(500));
                     Utility.DelayAction.Add(310, () => forcecastQ(target));
                 }
@@ -283,7 +285,7 @@ namespace HoolaRiven
                 if (target.IsValidTarget() && !target.IsZombie && !InWRange(target))
                 {
                     E.Cast(target.Position);
-                    Utility.DelayAction.Add(10, () => CastItem());
+                    Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(120, () => UseW(500));
                 }
             }
@@ -303,11 +305,19 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 if (Flash != SpellSlot.Unknown && Flash.IsReady()
-                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830)
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830 && !FirstHydra)
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
                     Utility.DelayAction.Add(170, () => FlashW());
+                }
+                else if (Flash != SpellSlot.Unknown && Flash.IsReady()
+                    && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830 && FirstHydra)
+                {
+                    E.Cast(Player.Position.Extend(target.Position, 200));
+                    R.Cast();
+                    UseCastItem(200);
+                    Utility.DelayAction.Add(230, () => FlashW());
                 }
             }
         }
@@ -320,7 +330,7 @@ namespace HoolaRiven
                 if (target.IsValidTarget() && !target.IsZombie)
                 {
                     if (!Orbwalking.InAutoAttackRange(target) && !InWRange(target)) E.Cast(target.Position);
-                    Utility.DelayAction.Add(10, () => CastItem());
+                    Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(130, () => forcecastQ(target));
                 }
             }
@@ -381,7 +391,7 @@ namespace HoolaRiven
             {
                 forceQ = false;
                 lastQ = Utils.GameTimeTickCount;
-                if (Qstrange) Game.Say("/d");
+                if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Game.Say("/d");
                 QStack += 1;
             }
             if (args.SData.Name.Contains("rivenizunablade"))
@@ -518,7 +528,7 @@ namespace HoolaRiven
             {
                 if (Q.IsReady() && HasItem())
                 {
-                    CastItem();
+                    UseCastItem(500);
                     forcecastQ(QTarget);
                 }
                 else if (Q.IsReady()) forcecastQ(QTarget);
@@ -538,7 +548,7 @@ namespace HoolaRiven
                 }
                 else if (HasItem() && Q.IsReady())
                 {
-                    CastItem();
+                    UseCastItem(200);
                     forcecastQ(QTarget);
                 }
                 else if (Q.IsReady())
@@ -553,7 +563,7 @@ namespace HoolaRiven
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
             {
-                CastItem();
+                UseCastItem(300);
                 forcecastQ(QTarget);
             }
 
@@ -564,7 +574,7 @@ namespace HoolaRiven
                     if (R.IsReady() && R.Instance.Name == IsSecondR)
                     {
                         var targets = TargetSelector.GetSelectedTarget();
-                        CastItem();
+                        UseCastItem(300);
                         UseR(300);
                     }
                     if (Q.IsReady() && !R.IsReady())
@@ -602,7 +612,7 @@ namespace HoolaRiven
                     return;
                 if (Q.IsReady() && HasItem())
                 {
-                    CastItem();
+                    UseCastItem(300);
                     forcecastQ(QTarget);
                 }
                 else if (Q.IsReady()) Q.Cast(target.Position);
@@ -637,7 +647,7 @@ namespace HoolaRiven
                     if (Mobs[0].IsValidTarget() && Mobs.Count >= 1 &&
                         Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                     {
-                        CastItem();
+                        UseCastItem(300);
                         forcecastQ(QTarget);
                     }
                 }
@@ -690,6 +700,14 @@ namespace HoolaRiven
             {
                 if (W.IsReady())
                     Utility.DelayAction.Add(i, () => W.Cast());
+            }
+        }
+        static void UseCastItem(int t)
+        {
+            for (int i = 0; i < t; i = i + 1)
+            {
+                if (HasItem())
+                    Utility.DelayAction.Add(i, () => CastItem());
             }
         }
 
