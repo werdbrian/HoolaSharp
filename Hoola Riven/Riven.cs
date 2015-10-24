@@ -64,7 +64,6 @@ namespace HoolaRiven
             Game.OnUpdate += Game_OnGameUpdate;
             Drawing.OnDraw += Drawing_OnDraw;
             Drawing.OnEndScene += Drawing_OnEndScene;
-            Orbwalking.AfterAttack += Orbwalking_AfterAttack;
             Obj_AI_Base.OnProcessSpellCast += OnCast;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
@@ -76,6 +75,7 @@ namespace HoolaRiven
         {
             var spellName = args.SData.Name;
             if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
+            QTarget = (Obj_AI_Base)args.Target;
 
             if (args.Target is Obj_AI_Minion)
             {
@@ -85,21 +85,38 @@ namespace HoolaRiven
                     if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                     {
                         var Minions = MinionManager.GetMinions(120 + Player.BoundingRadius + 70);
-                        if (LaneQ && Q.IsReady() && Minions.Count != 0 && Minions[0].IsValidTarget()) forcecastQ(Minions[0]);
-                        if (LaneW != 0 && (!Q.IsReady() || !LaneQ) && W.IsReady() && Minions.Count >= LaneW) W.Cast();
+                        if (LaneQ && Q.IsReady() && Minions.Count != 0 && Minions[0].IsValidTarget())
+                        {
+                            UseCastItem(300);
+                            forcecastQ(Minions[0]);
+                        }
+                        if (LaneW != 0 && (!Q.IsReady() || !LaneQ) && W.IsReady() && Minions.Count >= LaneW)
+                        {
+                            UseCastItem(300);
+                            UseW(300);
+                        }
                         if (LaneE && (!Q.IsReady() || !LaneQ) && (!W.IsReady() || LaneW == 0) && E.IsReady() && Minions.Count != 0) E.Cast(Minions[0].Position);
                         var Mobs = MinionManager.GetMinions(120 + Player.BoundingRadius + 70, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                        if (Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget()) forcecastQ(Mobs[0]);
-                        if (W.IsReady() && !Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget()) W.Cast();
+                        if (Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget())
+                        {
+                            UseCastItem(300);
+                            forcecastQ(Mobs[0]);
+                        }
+                        if (W.IsReady() && !Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget())
+                            UseCastItem(300);
+                        W.Cast();
                         if (E.IsReady() && !Q.IsReady() && !W.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget()) E.Cast(Mobs[0].Position);
                     }
                 }
             }
+            if (args.Target is Obj_AI_Turret || args.Target is Obj_Barracks || args.Target is Obj_BarracksDampener || args.Target is Obj_Building) if (args.Target.IsValid && args.Target != null && Q.IsReady() && LaneQ && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) forcecastQ((Obj_AI_Base)args.Target);
             if (args.Target is Obj_AI_Hero)
             {
                 var target = (Obj_AI_Hero)args.Target;
                 if (target.IsValid && target != null)
                 {
+                    if (KillstealR && R.IsReady() && R.Instance.Name == IsSecondR && target is Obj_AI_Hero) if (target.Health < (Rdame(target, target.Health) + Player.GetAutoAttackDamage2(target)) && target.Health > Player.GetAutoAttackDamage2(target)) R.Cast(target.Position);
+                    if (KillstealW && W.IsReady() && target is Obj_AI_Hero) if (target.Health < (W.GetDamage2(target) + Player.GetAutoAttackDamage2(target)) && target.Health > Player.GetAutoAttackDamage2(target)) W.Cast();
                     if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
                     {
                         if (Q.IsReady())
@@ -113,6 +130,35 @@ namespace HoolaRiven
                             W.Cast();
                         }
                         else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
+                    }
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass)
+                    {
+                        if (W.IsReady() && InWRange(target))
+                        {
+                            UseCastItem(300);
+                            UseW(300);
+                            if (Q.IsReady() && QStack != 3) forcecastQ(target);
+                        }
+                        else if (Q.IsReady())
+                        {
+                            UseCastItem(200);
+                            forcecastQ(target);
+                        }
+                        else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
+                    }
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
+                    {
+                        UseCastItem(300);
+                        forcecastQ(QTarget);
+                    }
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst)
+                    {
+                        if (R.IsReady() && R.Instance.Name == IsSecondR)
+                        {
+                            UseCastItem(500);
+                            UseR(500);
+                        }
+                        else if (Q.IsReady()) forcecastQ(target);
                     }
                 }
             }
@@ -509,7 +555,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(15) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(30) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
@@ -520,70 +566,6 @@ namespace HoolaRiven
             forceQ = true;
             if (target.IsValidTarget() && target != null) QTarget = target;
             else QTarget = null;
-        }
-
-        static void Orbwalking_AfterAttack(AttackableUnit unit, AttackableUnit target)
-        {
-            QTarget = target.IsValidTarget() && target != null ? target : null;
-            if (!unit.IsMe || !target.IsValidTarget() || target == null) return;
-
-            if (KillstealR && R.IsReady() && R.Instance.Name == IsSecondR && target is Obj_AI_Hero)
-            {
-                var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(Orbwalking.GetRealAutoAttackRange(unit)) && !x.IsZombie);
-                foreach (var targetR in targets)
-                {
-                    if (targetR.Health < (Rdame(targetR, targetR.Health) + Player.GetAutoAttackDamage2(targetR)) && targetR.Health > Player.GetAutoAttackDamage2(targetR)) R.Cast(targetR.Position);
-                }
-            }
-
-            if (KillstealW && W.IsReady() && target is Obj_AI_Hero)
-            {
-                var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(Orbwalking.GetRealAutoAttackRange(unit)) && !x.IsZombie);
-                foreach (var targetR in targets)
-                {
-                    if (targetR.Health < (W.GetDamage2(targetR) + Player.GetAutoAttackDamage2(targetR)) && targetR.Health > Player.GetAutoAttackDamage2(targetR)) W.Cast();
-                }
-            }
-
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass && target is Obj_AI_Hero)
-            {
-                if (W.IsReady() && InWRange(target))
-                {
-                    W.Cast();
-                    if (Q.IsReady() && QStack != 3) forcecastQ(QTarget);
-                }
-                else if (Q.IsReady())
-                {
-                    UseCastItem(200);
-                    forcecastQ(QTarget);
-                }
-                else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
-            }
-
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
-            {
-                UseCastItem(300);
-                forcecastQ(QTarget);
-            }
-
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst && target is Obj_AI_Hero)
-            {
-                if (HasItem())
-                {
-                    if (R.IsReady() && R.Instance.Name == IsSecondR)
-                    {
-                        UseCastItem(300);
-                        UseR(300);
-                    }
-                    if (Q.IsReady() && !R.IsReady()) forcecastQ(QTarget);
-                }
-                else if (R.IsReady() && R.Instance.Name == IsSecondR) UseR(300);
-                if (!R.IsReady() && Q.IsReady()) forcecastQ(QTarget);
-            }
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_Building ||
-                    target is Obj_Barracks && Q.IsReady() && LaneQ && target.IsValidTarget())
-                forcecastQ(QTarget);
-
         }
 
         static void UseR(int t)
