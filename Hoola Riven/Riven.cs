@@ -199,7 +199,7 @@ namespace HoolaRiven
             if (DrawBT && Flash != SpellSlot.Unknown) Render.Circle.DrawCircle(Player.Position, 830, R.IsReady() && Flash.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawFH) Render.Circle.DrawCircle(Player.Position, 340 + Player.AttackRange + 70, E.IsReady() && Q.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 310, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
-            if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, DrawAlwaysR ? "Always R On" : "Always R Off");
+            if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Red, AlwaysR ? "Always R On" : "Always R Off");
             if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Red, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
         }
 
