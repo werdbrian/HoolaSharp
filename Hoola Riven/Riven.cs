@@ -234,8 +234,8 @@ namespace HoolaRiven
                 R.Cast();
                 UseW(500);
             }
-            if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
+            else if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
+            else if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (((totaldame(targetR) >= targetR.Health
              && basicdmg(targetR) <= targetR.Health) || Player.CountEnemiesInRange(900) >= 2) || AlwaysR))
             {
                 if (!InWRange(targetR))
