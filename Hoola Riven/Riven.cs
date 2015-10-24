@@ -309,7 +309,7 @@ namespace HoolaRiven
                 {
                     E.Cast(Player.Position.Extend(target.Position, 200));
                     R.Cast();
-                    Utility.DelayAction.Add(170, () => FlashW());
+                    Utility.DelayAction.Add(160, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
                     && R.IsReady() && R.Instance.Name == IsFirstR && Player.Distance(target.Position) <= 830 && FirstHydra)
@@ -715,7 +715,7 @@ namespace HoolaRiven
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
                 W.Cast();
-                Utility.DelayAction.Add(3, () => Player.Spellbook.CastSpell(Flash, target.Position));
+                Utility.DelayAction.Add(10, () => Player.Spellbook.CastSpell(Flash, target.Position));
             }
         }
 
