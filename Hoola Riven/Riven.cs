@@ -377,7 +377,7 @@ namespace HoolaRiven
                     E.Cast(targetR.Position);
                     R.Cast();
                     Utility.DelayAction.Add(170, () => UseW(270));
-                    Utility.DelayAction.Add(310, () => forcecastQ(targetR));
+                    Utility.DelayAction.Add(280, () => forcecastQ(targetR));
                 }
             }
             else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
@@ -396,7 +396,7 @@ namespace HoolaRiven
                     E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(170, () => UseW(500));
-                    Utility.DelayAction.Add(310, () => forcecastQ(targetR));
+                    Utility.DelayAction.Add(280, () => forcecastQ(targetR));
                 }
             }
             else if (!UseHoola && W.IsReady() && targetR != null && E.IsReady())
@@ -556,7 +556,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(50) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(60) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
