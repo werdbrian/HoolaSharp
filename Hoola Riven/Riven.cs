@@ -597,22 +597,19 @@ namespace HoolaRiven
 
         static void Orbwalking_AfterAttacklc(AttackableUnit unit, AttackableUnit target)
         {
-            QTarget = target;
             if (!unit.IsMe && target == null) return;
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
             {
                 if (Q.IsReady())
-                    forcecastQ(QTarget);
+                    forcecastQ(target);
             }
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ)
+            else if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (target is Obj_Building || target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_BarracksDampener)
-                    return;
-                if (Q.IsReady() && HasItem())
+                if (Q.IsReady() && LaneQ)
                 {
                     UseCastItem(300);
-                    forcecastQ(QTarget);
+                    forcecastQ(target);
                 }
                 else if (W.IsReady())
                 {
