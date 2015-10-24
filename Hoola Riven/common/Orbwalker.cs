@@ -92,7 +92,7 @@ namespace HoolaRiven
             "monkeykingdoubleattack", "RivenMartyR",
             "shyvanadoubleattack", "shyvanadoubleattackdragon", "zyragraspingplantattack", "zyragraspingplantattack2",
             "zyragraspingplantattackfire", "zyragraspingplantattack2fire", "viktorpowertransfer", "sivirwattackbounce"
-        }; 
+        };
 
         //Spells that are attacks even if they dont have the "attack" word in their name.
         private static readonly string[] Attacks =
@@ -380,8 +380,8 @@ namespace HoolaRiven
             float extraWindup,
             float extraMoveup = 0,
             float holdAreaRadius = 0,
-            bool useFixedDistance = false,
-            bool randomizeMinDistance = false)
+            bool useFixedDistance = true,
+            bool randomizeMinDistance = true)
         {
             try
             {
@@ -595,7 +595,7 @@ namespace HoolaRiven
                     new MenuItem("FastHarass", "FastHarass").SetValue(new KeyBind('Y', KeyBindType.Press)));
                 _config.AddItem(
                    new MenuItem("Freeze", "Lane Freeze (Toggle)").SetValue(new KeyBind('H', KeyBindType.Toggle)));
-                
+
                 _delay = _config.Item("MovementDelay").GetValue<Slider>().Value;
                 Player = ObjectManager.Player;
                 Game.OnUpdate += GameOnOnGameUpdate;
