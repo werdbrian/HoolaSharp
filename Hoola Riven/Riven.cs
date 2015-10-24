@@ -40,6 +40,8 @@ namespace HoolaRiven
         private static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
         private static bool RMaxDam { get { return Menu.Item("RMaxDam").GetValue<bool>(); } }
         private static bool RKillable { get { return Menu.Item("RKillable").GetValue<bool>(); } }
+        private static int LaneW { get { return Menu.Item("LaneW").GetValue<Slider>().Value; } }
+        private static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -79,6 +81,13 @@ namespace HoolaRiven
 
 
             Menu.AddSubMenu(Combo);
+            var Lane = new Menu("Lane", "Lane");
+            Lane.AddItem(new MenuItem("LaneW", "Use W X Minion").SetValue(new Slider(5, 0, 5)));
+            Lane.AddItem(new MenuItem("LaneE", "Use E While Laneclear").SetValue(true));
+
+
+
+            Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
             Misc.AddItem(new MenuItem("AutoW", "Auto W When x Enemy").SetValue(new Slider(5, 0, 5)));
@@ -604,7 +613,7 @@ namespace HoolaRiven
             }
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (target is Obj_Building || target is Obj_AI_Turret)
+                if (target is Obj_Building || target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_BarracksDampener)
                     return;
                 if (Q.IsReady() && HasItem())
                 {
@@ -619,7 +628,7 @@ namespace HoolaRiven
                     {
                         wrange = 195 + Player.BoundingRadius + 70;
                         var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
-                        if (Minions[0].IsValidTarget() && Minions.Count <= 3 &&
+                        if (Minions[0].IsValidTarget() && Minions.Count <= LaneW && LaneW >= 1 &&
                             Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                         {
                             W.Cast();
@@ -636,7 +645,7 @@ namespace HoolaRiven
                         }
                     }
                 }
-                else if (E.IsReady()) E.Cast(target.Position);
+                else if (E.IsReady() && LaneE) E.Cast(target.Position);
             }
         }
 
