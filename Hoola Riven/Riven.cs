@@ -598,7 +598,7 @@ namespace HoolaRiven
         static void Orbwalking_AfterAttacklc(AttackableUnit unit, AttackableUnit target)
         {
             QTarget = target;
-            if (!unit.IsMe && target != null) return;
+            if (!unit.IsMe && target == null) return;
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
             {
