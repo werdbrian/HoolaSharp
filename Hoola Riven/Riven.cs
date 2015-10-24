@@ -146,10 +146,35 @@ namespace HoolaRiven
             }
         }
 
+        static void AutoUseW()
+        {
+            if (AutoW > 0)
+            {
+                float wrange = 0;
+                if (Player.HasBuff("RivenFengShuiEngine"))
+                {
+                    wrange = 195 + Player.BoundingRadius + 70;
+                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
+                    {
+                        W.Cast();
+                    }
+                }
+                else
+                {
+                    wrange = 120 + Player.BoundingRadius + 70;
+                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
+                    {
+                        W.Cast();
+                    }
+                }
+            }
+        }
+
         static void Game_OnGameUpdate(EventArgs args)
         {
             statereset();
             UseRMaxDam();
+            AutoUseW();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo) Combo();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst) Burst();
@@ -238,6 +263,9 @@ namespace HoolaRiven
                 Utility.DelayAction.Add(10, () => UseCastItem(300));
                 Utility.DelayAction.Add(170, () => UseW(300));
             }
+
+            var Minions = MinionManager.GetMinions(120 + Player.BoundingRadius + 70);
+            if (Minions.Count >= LaneW && LaneW != 0 && Minions != null) W.Cast();
         }
 
         static void Combo()
@@ -433,61 +461,11 @@ namespace HoolaRiven
 
         static void statereset()
         {
-            if (AutoW > 0)
-            {
-                float wrange = 0;
-                if (Player.HasBuff("RivenFengShuiEngine"))
-                {
-                    wrange = 195 + Player.BoundingRadius + 70;
-                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
-                    {
-                        W.Cast();
-                    }
-                }
-                else
-                {
-                    wrange = 120 + Player.BoundingRadius + 70;
-                    if (Player.CountEnemiesInRange(wrange) >= AutoW)
-                    {
-                        W.Cast();
-                    }
-                }
-
-            }
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ == true && Orbwalking.CanMove(10))
+            if (forceQ && Orbwalking.CanMove(5) && QTarget != null && QTarget.IsValidTarget())
             {
-                var target = TargetSelector.GetTarget(310, TargetSelector.DamageType.Physical);
-                //if (Utils.GameTimeTickCount - cQ >= 350 + Player.AttackCastDelay - Game.Ping / 2)
-                if (Q.IsReady() && QTarget.IsValidTarget())
-                    Q.Cast(QTarget.Position);
-                else if (Q.IsReady() && target.IsValidTarget() && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
-                {
-                    Q.Cast(target.Position);
-                }
-                else if (Q.IsReady() && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
-                {
-                    var Minions = MinionManager.GetMinions(Q.Range, MinionTypes.All, MinionTeam.Enemy);
-
-                    if (Minions.Count <= 0)
-                        return;
-
-                    Q.Cast(Minions[0].Position);
-                }
-                else
-                    Q.Cast(Game.CursorPos);
-                //else
-                //    forceQ = false;
-            }
-            if (QTarget == null)
-            {
-                var Minions = MinionManager.GetMinions(Q.Range, MinionTypes.All, MinionTeam.Enemy);
-
-                if (Minions.Count <= 0)
-                    return;
-
-                QTarget = Minions[0];
+                if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
         }
 
@@ -499,6 +477,7 @@ namespace HoolaRiven
 
         static void Orbwalking_AfterAttack(AttackableUnit unit, AttackableUnit target)
         {
+            QTarget = target;
             if (!unit.IsMe || !target.IsValidTarget()) return;
 
             if (KillstealR && R.IsReady() && R.Instance.Name == IsSecondR && target is Obj_AI_Hero)
@@ -542,16 +521,12 @@ namespace HoolaRiven
                         forcecastQ(target);
                     }
                 }
-                else if (HasItem() && Q.IsReady())
+                else if (Q.IsReady())
                 {
                     UseCastItem(200);
                     forcecastQ(target);
                 }
-                else if (Q.IsReady())
-                {
-                    forcecastQ(target);
-                }
-                else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target) && !InWRange(target))
+                else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target))
                 {
                     E.Cast(target.Position);
                 }
@@ -598,19 +573,15 @@ namespace HoolaRiven
                         UseCastItem(300);
                         forcecastQ(Mobs[0]);
                     }
-                    else if (W.IsReady())
-                    {
-                        UseCastItem(300);
-                        UseW(300);
-                    }
                     else if (E.IsReady())
                     {
                         E.Cast(Mobs[0].Position);
                         UseCastItem(300);
                     }
                 }
+
                 var Minions = MinionManager.GetMinions(E.Range + 170);
-                if (Minions.Count != 0 && Minions[0].IsValidTarget(E.Range + 170))
+                if (Minions.Count != 0 && Minions[0].IsValidTarget(E.Range + 170) && Minions != null)
                 {
                     if (Q.IsReady() && LaneQ)
                     {
@@ -620,13 +591,15 @@ namespace HoolaRiven
                     var MinionsInWRange = MinionManager.GetMinions(W.Range + Player.BoundingRadius + 70);
                     if (W.IsReady() && MinionsInWRange.Count >= LaneW && LaneW != 0)
                     {
-                        W.Cast();
+                        UseCastItem(300);
+                        UseW(300);
                     }
                     if ((!Q.IsReady() || !LaneQ) && LaneE)
                     {
                         E.Cast(Minions[0].Position);
                     }
                 }
+
                 if (target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_Building ||
                     target is Obj_Barracks)
                 {
