@@ -641,19 +641,18 @@ namespace HoolaRiven
                     }
                 }
                 else if (E.IsReady() && LaneE) E.Cast(target.Position);
-                if (Q.IsReady() && HasItem())
+                if (Q.IsReady())
                 {
                     var Mobs = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
                     if (Mobs[0].IsValidTarget() && Mobs.Count >= 1 &&
                         Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                     {
-                        UseCastItem(300);
+                        if (HasItem()) UseCastItem(300);
                         forcecastQ(QTarget);
                     }
                 }
-                if (W.IsReady())
+                else if (W.IsReady())
                 {
-                    var Mobs = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
                     float wrange = 0;
                     if (Player.HasBuff("RivenFengShuiEngine"))
                     {
@@ -674,11 +673,10 @@ namespace HoolaRiven
                             W.Cast();
                         }
                     }
-                    if (Mobs[0].IsValidTarget() && Mobs.Count >= 1)
-                    {
-                        E.Cast(Mobs[0].Position);
-                    }
                 }
+                var Mob = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+
+                if (!W.IsReady() && E.IsReady() && Mob[0].IsValidTarget() && Mob.Count >= 1) E.Cast(Mob[0].Position);
             }
         }
 
