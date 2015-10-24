@@ -567,7 +567,7 @@ namespace HoolaRiven
                     new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35, 0, 100)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetValue(new Slider(0, 0, 200)));
                 _config.AddItem(
-                    new MenuItem("MovementDelay", "Movement delay").SetValue(new Slider(0, 0, 250)))
+                    new MenuItem("MovementDelay", "Movement delay").SetValue(new Slider(160, 0, 250)))
                     .ValueChanged += (sender, args) => SetMovementDelay(args.GetNewValue<Slider>().Value);
                 _config.AddItem(
                     new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0)));
