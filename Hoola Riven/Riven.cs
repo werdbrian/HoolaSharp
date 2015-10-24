@@ -65,7 +65,6 @@ namespace HoolaRiven
             Drawing.OnDraw += Drawing_OnDraw;
             Drawing.OnEndScene += Drawing_OnEndScene;
             Orbwalking.AfterAttack += Orbwalking_AfterAttack;
-            Orbwalking.AfterAttack += Orbwalking_AfterAttacklc;
             Obj_AI_Base.OnProcessSpellCast += OnCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
             Obj_AI_Base.OnProcessSpellCast += OnCasting;
@@ -500,7 +499,6 @@ namespace HoolaRiven
 
         static void Orbwalking_AfterAttack(AttackableUnit unit, AttackableUnit target)
         {
-            QTarget = target;
             if (!unit.IsMe || !target.IsValidTarget()) return;
 
             if (KillstealR && R.IsReady() && R.Instance.Name == IsSecondR && target is Obj_AI_Hero)
@@ -525,12 +523,11 @@ namespace HoolaRiven
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
-                if (Q.IsReady() && HasItem())
+                if (Q.IsReady())
                 {
-                    UseCastItem(500);
+                    UseCastItem(200);
                     forcecastQ(QTarget);
                 }
-                else if (Q.IsReady()) forcecastQ(QTarget);
                 else if (W.IsReady() && InWRange(target)) W.Cast();
                 else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
             }
@@ -542,17 +539,17 @@ namespace HoolaRiven
                     W.Cast();
                     if (Q.IsReady() && QStack != 3)
                     {
-                        forcecastQ(QTarget);
+                        forcecastQ(target);
                     }
                 }
                 else if (HasItem() && Q.IsReady())
                 {
                     UseCastItem(200);
-                    forcecastQ(QTarget);
+                    forcecastQ(target);
                 }
                 else if (Q.IsReady())
                 {
-                    forcecastQ(QTarget);
+                    forcecastQ(target);
                 }
                 else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target) && !InWRange(target))
                 {
@@ -563,7 +560,7 @@ namespace HoolaRiven
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
             {
                 UseCastItem(300);
-                forcecastQ(QTarget);
+                forcecastQ(target);
             }
 
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst && target is Obj_AI_Hero)
@@ -572,13 +569,12 @@ namespace HoolaRiven
                 {
                     if (R.IsReady() && R.Instance.Name == IsSecondR)
                     {
-                        var targets = TargetSelector.GetSelectedTarget();
                         UseCastItem(300);
                         UseR(300);
                     }
                     if (Q.IsReady() && !R.IsReady())
                     {
-                        forcecastQ(QTarget);
+                        forcecastQ(target);
 
                     }
                 }
@@ -592,87 +588,52 @@ namespace HoolaRiven
                     forcecastQ(QTarget);
                 }
             }
-
-        }
-
-        static void Orbwalking_AfterAttacklc(AttackableUnit unit, AttackableUnit target)
-        {
-            if (!unit.IsMe && target == null) return;
-
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && LaneQ && (target is Obj_Building || target is Obj_AI_Turret || target is Obj_BarracksDampener))
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
             {
-                if (Q.IsReady())
-                    forcecastQ(target);
+                var Mobs = MinionManager.GetMinions(E.Range + 170, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                if (Mobs.Count != 0 && Mobs[0].IsValidTarget(E.Range + 170) && Mobs != null)
+                {
+                    if (Q.IsReady())
+                    {
+                        UseCastItem(300);
+                        forcecastQ(Mobs[0]);
+                    }
+                    else if (W.IsReady())
+                    {
+                        UseCastItem(300);
+                        UseW(300);
+                    }
+                    else if (E.IsReady())
+                    {
+                        E.Cast(Mobs[0].Position);
+                        UseCastItem(300);
+                    }
+                }
+                var Minions = MinionManager.GetMinions(E.Range + 170);
+                if (Minions.Count != 0 && Minions[0].IsValidTarget(E.Range + 170))
+                {
+                    if (Q.IsReady() && LaneQ)
+                    {
+                        UseCastItem(300);
+                        forcecastQ(Minions[0]);
+                    }
+                    var MinionsInWRange = MinionManager.GetMinions(W.Range + Player.BoundingRadius + 70);
+                    if (W.IsReady() && MinionsInWRange.Count >= LaneW && LaneW != 0)
+                    {
+                        W.Cast();
+                    }
+                    if ((!Q.IsReady() || !LaneQ) && LaneE)
+                    {
+                        E.Cast(Minions[0].Position);
+                    }
+                }
+                if (target is Obj_AI_Turret || target is Obj_Barracks || target is Obj_Building ||
+                    target is Obj_Barracks)
+                {
+                    if (Q.IsReady() && LaneQ && target.IsValidTarget()) forcecastQ(target);
+                }
             }
-            else if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-            {
-                if (Q.IsReady() && LaneQ)
-                {
-                    UseCastItem(300);
-                    forcecastQ(target);
-                }
-                else if (W.IsReady())
-                {
-                    float wrange = 0;
-                    if (Player.HasBuff("RivenFengShuiEngine"))
-                    {
-                        wrange = 195 + Player.BoundingRadius + 70;
-                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW && LaneW != 0 &&
-                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            W.Cast();
-                        }
-                    }
-                    else
-                    {
-                        wrange = 120 + Player.BoundingRadius + 70;
-                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW && LaneW != 0 &&
-                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            W.Cast();
-                        }
-                    }
-                }
-                else if (E.IsReady() && LaneE) E.Cast(target.Position);
-                if (Q.IsReady())
-                {
-                    var Mobs = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                    if (Mobs[0].IsValidTarget() && Mobs.Count >= 1 &&
-                        Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                    {
-                        if (HasItem()) UseCastItem(300);
-                        forcecastQ(QTarget);
-                    }
-                }
-                else if (W.IsReady())
-                {
-                    float wrange = 0;
-                    if (Player.HasBuff("RivenFengShuiEngine"))
-                    {
-                        wrange = 195 + Player.BoundingRadius + 70;
-                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= 1 &&
-                            Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            W.Cast();
-                        }
-                    }
-                    else
-                    {
-                        wrange = 120 + Player.BoundingRadius + 70;
-                        var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= 1 && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
-                        {
-                            W.Cast();
-                        }
-                    }
-                }
-                var Mob = MinionManager.GetMinions(E.Range + Player.BoundingRadius, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
 
-                if (!W.IsReady() && E.IsReady() && Mob[0].IsValidTarget() && Mob.Count >= 1) E.Cast(Mob[0].Position);
-            }
         }
 
         static void UseR(int t)
