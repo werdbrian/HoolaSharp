@@ -242,14 +242,14 @@ namespace HoolaRiven
         static void Combo()
         {
             var targetR = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-            if (R.IsReady() && R.Instance.Name == IsFirstR && Orbwalker.InAutoAttackRange(targetR) && AlwaysR) R.Cast();
-            if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR)
+            if (R.IsReady() && R.Instance.Name == IsFirstR && Orbwalker.InAutoAttackRange(targetR) && AlwaysR && targetR != null) R.Cast();
+            if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR && targetR != null)
             {
                 R.Cast();
                 UseW(500);
             }
-            if (W.IsReady() && InWRange(targetR) && ComboW) W.Cast();
-            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
+            if (W.IsReady() && InWRange(targetR) && ComboW && targetR != null) W.Cast();
+            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -259,7 +259,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
+            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -270,31 +270,28 @@ namespace HoolaRiven
             }
             else if (UseHoola && W.IsReady() && E.IsReady())
             {
-                var target = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-                if (target.IsValidTarget() && !target.IsZombie && !InWRange(target))
+                if (targetR.IsValidTarget() && targetR != null && !targetR.IsZombie && !InWRange(targetR))
                 {
-                    E.Cast(target.Position);
+                    E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(120, () => UseW(500));
-                    Utility.DelayAction.Add(310, () => forcecastQ(target));
+                    Utility.DelayAction.Add(310, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && W.IsReady() && E.IsReady())
+            else if (!UseHoola && W.IsReady() && targetR != null && E.IsReady())
             {
-                var target = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-                if (target.IsValidTarget() && !target.IsZombie && !InWRange(target))
+                if (targetR.IsValidTarget() && targetR != null && !targetR.IsZombie && !InWRange(targetR))
                 {
-                    E.Cast(target.Position);
+                    E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(500));
                     Utility.DelayAction.Add(120, () => UseW(500));
                 }
             }
             else if (E.IsReady())
             {
-                var target = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-                if (target.IsValidTarget() && !target.IsZombie && !InWRange(target))
+                if (targetR.IsValidTarget() && !targetR.IsZombie && targetR != null && !InWRange(targetR))
                 {
-                    E.Cast(target.Position);
+                    E.Cast(targetR.Position);
                 }
             }
         }
@@ -410,7 +407,7 @@ namespace HoolaRiven
 
         static bool InWRange(AttackableUnit target)
         {
-            if (Player.HasBuff("RivenFengShuiEngine"))
+            if (Player.HasBuff("RivenFengShuiEngine") && target != null)
             {
                 return
                     70 + 195 + Player.BoundingRadius >= Player.Distance(target.Position);
