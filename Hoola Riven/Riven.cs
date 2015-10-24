@@ -621,7 +621,7 @@ namespace HoolaRiven
                     {
                         wrange = 195 + Player.BoundingRadius + 70;
                         var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW && LaneW >= 1 &&
+                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW && LaneW != 0 &&
                             Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                         {
                             W.Cast();
@@ -631,7 +631,7 @@ namespace HoolaRiven
                     {
                         wrange = 120 + Player.BoundingRadius + 70;
                         var Minions = MinionManager.GetMinions(wrange, MinionTypes.All, MinionTeam.Enemy);
-                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW &&
+                        if (Minions[0].IsValidTarget() && Minions.Count >= LaneW && LaneW != 0 &&
                             Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                         {
                             W.Cast();
