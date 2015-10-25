@@ -1,0 +1,186 @@
+﻿using System;
+using System.Linq;
+using LeagueSharp;
+using LeagueSharp.Common;
+using Color = System.Drawing.Color;
+using ItemData = LeagueSharp.Common.Data.ItemData;
+using SharpDX;
+
+
+namespace HoolaLucian
+{
+    public class Program
+    {
+        private static Menu Menu;
+        private static Orbwalking.Orbwalker Orbwalker;
+        private static Obj_AI_Hero Player = ObjectManager.Player;
+        private static HpBarIndicator Indicator = new HpBarIndicator();
+        private static Spell Q, Q1, W, E;
+        private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
+        static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
+
+        static void Main()
+        {
+            CustomEvents.Game.OnGameLoad += OnGameLoad;
+        }
+
+        static void OnGameLoad(EventArgs args)
+        {
+            if (Player.ChampionName != "Lucian") return;
+            Game.PrintChat("Hoola Lucian - Loaded Successfully, Good Luck! :)");
+            Q = new Spell(SpellSlot.Q, 675);
+            Q1 = new Spell(SpellSlot.Q, 1100);
+            W = new Spell(SpellSlot.W, 1200, TargetSelector.DamageType.Magical);
+            E = new Spell(SpellSlot.E, 475f);
+
+            OnGameLoad();
+
+            Q.SetTargetted(0.25f, 1400f);
+            Q1.SetSkillshot(0.5f, 65, float.MaxValue, false, SkillshotType.SkillshotLine);
+            W.SetSkillshot(0.30f, 80f, 1600f, true, SkillshotType.SkillshotLine);
+
+            Spellbook.OnCastSpell += Spellbook_OnCastSpell;
+            Game.OnUpdate += Game_OnUpdate;
+            Drawing.OnEndScene += Drawing_OnEndScene;
+            Obj_AI_Base.OnDoCast += OnDoCast;
+        }
+        private static void OnGameLoad()
+        {
+            Menu = new Menu("Hoola Lucian", "hoolalucian", true);
+
+            Menu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
+            Orbwalker = new Orbwalking.Orbwalker(Menu.SubMenu("Orbwalking"));
+
+            var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
+            TargetSelector.AddToMenu(targetSelectorMenu);
+            Menu.AddSubMenu(targetSelectorMenu);
+
+
+            var Harass = new Menu("Harass", "Harass");
+            Harass.AddItem(new MenuItem("HEXQ", "Use Extended Q").SetValue(true));
+            Menu.AddSubMenu(Harass);
+
+            var Auto = new Menu("Auto", "Auto");
+            Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('T', KeyBindType.Toggle)));
+            Menu.AddSubMenu(Auto);
+
+
+            Menu.AddToMainMenu();
+        }
+
+        private static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            var spellName = args.SData.Name;
+            if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
+
+            if (args.Target is Obj_AI_Hero)
+            {
+                var target = (Obj_AI_Base)args.Target;
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid && target != null)
+                {
+                    if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast();
+                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(Game.CursorPos);
+                    else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
+                    else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
+                }
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid && target != null)
+                {
+                    var edir = Player.ServerPosition.Extend(target.Position, 1);
+                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(edir);
+                    else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
+                    else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
+                }
+            }
+        }
+
+        static void Harass()
+        {
+            if (Q.IsReady() && HEXQ)
+            {
+                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
+                {
+                    var qpred = Q.GetPrediction(t1, true);
+                    var distance = Player.Distance(qpred.CastPosition);
+                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
+
+                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                    {
+                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
+                        {
+                            Q.Cast(minion);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        static void AutoUseQ()
+        {
+            if (Q.IsReady() && AutoQ)
+            {
+                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
+                {
+                    var qpred = Q.GetPrediction(t1, true);
+                    var distance = Player.Distance(qpred.CastPosition);
+                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
+
+                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                    {
+                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
+                        {
+                            Q.Cast(minion);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        static void Game_OnUpdate(EventArgs args)
+        {
+            AutoUseQ();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
+        }
+        static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
+        {
+            if (args.Slot == SpellSlot.R && ItemData.Youmuus_Ghostblade.GetItem().IsReady())
+            {
+                ItemData.Youmuus_Ghostblade.GetItem().Cast();
+            }
+        }
+
+        static float getComboDamage2(Obj_AI_Base enemy)
+        {
+            if (enemy != null)
+            {
+                float damage = 0;
+                if (E.IsReady()) damage = damage + (float)Player.GetAutoAttackDamage2(enemy) * 2;
+                if (W.IsReady()) damage = damage + W.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy);
+                if (Q.IsReady())
+                {
+                    damage = damage + Q.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy);
+                }
+                damage = damage + (float)Player.GetAutoAttackDamage2(enemy);
+
+                return damage;
+            }
+            return 0;
+        }
+
+        static void Drawing_OnEndScene(EventArgs args)
+        {
+            foreach (
+                var enemy in
+                    ObjectManager.Get<Obj_AI_Hero>()
+                        .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
+            {
+                Indicator.unit = enemy;
+                Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+
+            }
+        }
+    }
+}
