@@ -16,7 +16,7 @@ namespace HoolaLucian
         private static Orbwalking.Orbwalker Orbwalker;
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
-        private static Spell Q, Q1, W, E;
+        private static Spell Q, Q1, W, E, R;
         private static bool AAPassive;
         private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
         private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
@@ -35,6 +35,7 @@ namespace HoolaLucian
         private static bool LE { get { return Menu.Item("LE").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
         private static int MinMana { get { return Menu.Item("MinMana").GetValue<Slider>().Value; } }
+        static bool ForceR { get { return Menu.Item("ForceR").GetValue<KeyBind>().Active; } }
 
         static void Main()
         {
@@ -49,17 +50,20 @@ namespace HoolaLucian
             Q1 = new Spell(SpellSlot.Q, 1100);
             W = new Spell(SpellSlot.W, 1200, TargetSelector.DamageType.Magical);
             E = new Spell(SpellSlot.E, 475f);
+            R = new Spell(SpellSlot.R, 1400);
 
             OnMenuLoad();
 
             Q.SetTargetted(0.25f, 1400f);
             Q1.SetSkillshot(0.5f, 65, float.MaxValue, false, SkillshotType.SkillshotLine);
             W.SetSkillshot(0.30f, 80f, 1600f, true, SkillshotType.SkillshotLine);
+            R.SetSkillshot(0.2f, 110f, 2500, true, SkillshotType.SkillshotLine);
 
             Spellbook.OnCastSpell += Spellbook_OnCastSpell;
             Game.OnUpdate += Game_OnUpdate;
             Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnDoCast += OnDoCast;
+            Obj_AI_Base.OnDoCast += OnDoCastLC;
         }
         private static void OnMenuLoad()
         {
@@ -76,6 +80,7 @@ namespace HoolaLucian
             Combo.AddItem(new MenuItem("CQ", "Use Q").SetValue(true));
             Combo.AddItem(new MenuItem("CW", "Use W").SetValue(true));
             Combo.AddItem(new MenuItem("CE", "Use E").SetValue(true));
+            Combo.AddItem(new MenuItem("ForceR", "Force R On Target Selector").SetValue(new KeyBind('T', KeyBindType.Press)));
             Menu.AddSubMenu(Combo);
 
             var Misc = new Menu("Misc", "Misc");
@@ -104,7 +109,7 @@ namespace HoolaLucian
             Menu.AddSubMenu(JC);
 
             var Auto = new Menu("Auto", "Auto");
-            Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('T', KeyBindType.Toggle)));
+            Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
             Auto.AddItem(new MenuItem("MinMana", "Min Mana (%)").SetValue(new Slider(80)));
             Menu.AddSubMenu(Auto);
 
@@ -134,10 +139,22 @@ namespace HoolaLucian
             }
             if (args.Target is Obj_AI_Minion)
             {
-                var target = (Obj_AI_Base)args.Target;
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && target.IsValid)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && args.Target.IsValid)
                 {
                     Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                }
+            }
+        }
+        private static void OnDoCastLC(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            var spellName = args.SData.Name;
+            if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
+
+            if (args.Target is Obj_AI_Minion)
+            {
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && args.Target.IsValid)
+                {
+                    Utility.DelayAction.Add(5, () => OnDoCastDelayedLC(args));
                 }
             }
         }
@@ -151,6 +168,23 @@ namespace HoolaLucian
                 {
                     if (target.Health < Q.GetDamage2(target) && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
                         Q.Cast(target);
+                }
+            }
+        }
+        private static void OnDoCastDelayedLC(GameObjectProcessSpellCastEventArgs args)
+        {
+            AAPassive = false;
+            if (args.Target is Obj_AI_Minion && args.Target.IsValid)
+            {
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                {
+                    var Minions = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health);
+                    if (Minions[0].IsValid && Minions.Count != 0)
+                    {
+                        if (E.IsReady() && !AAPassive && LE) E.Cast(Game.CursorPos);
+                        if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !LE)) && LQ && !AAPassive) Q.Cast(Minions[0]);
+                        if ((!E.IsReady() || (E.IsReady() && !LE)) && (!Q.IsReady() || (Q.IsReady() && !LQ)) && LW && W.IsReady() && !AAPassive) W.Cast(Minions[0].Position);
+                    }
                 }
             }
         }
@@ -174,21 +208,17 @@ namespace HoolaLucian
                     if ((!E.IsReady() || (E.IsReady() && !HE)) && (!Q.IsReady() || (Q.IsReady() && !HQ)) && HW && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
             }
-            if (args.Target is Obj_AI_Minion)
+            if (args.Target is Obj_AI_Minion && args.Target.IsValid)
             {
-                var Mobs = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && Mobs[0].IsValid)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
                 {
-                    if (E.IsReady() && !AAPassive && JE) E.Cast(Game.CursorPos);
-                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !JE)) && JQ && !AAPassive) Q.Cast(Mobs[0]);
-                    if ((!E.IsReady() || (E.IsReady() && !JE)) && (!Q.IsReady() || (Q.IsReady() && !JQ)) && JW && W.IsReady() && !AAPassive) W.Cast(Mobs[0].Position);
-                }
-                var Minions = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player));
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && Minions[0].IsValid)
-                {
-                    if (E.IsReady() && !AAPassive && LE) E.Cast(Game.CursorPos);
-                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !LE)) && LQ && !AAPassive) Q.Cast(Minions[0]);
-                    if ((!E.IsReady() || (E.IsReady() && !LE)) && (!Q.IsReady() || (Q.IsReady() && !LQ)) && LW && W.IsReady() && !AAPassive) W.Cast(Minions[0].Position);
+                    var Mobs = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+                    if (Mobs[0].IsValid && Mobs.Count != 0)
+                    {
+                        if (E.IsReady() && !AAPassive && JE) E.Cast(Game.CursorPos);
+                        if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !JE)) && JQ && !AAPassive) Q.Cast(Mobs[0]);
+                        if ((!E.IsReady() || (E.IsReady() && !JE)) && (!Q.IsReady() || (Q.IsReady() && !JQ)) && JW && W.IsReady() && !AAPassive) W.Cast(Mobs[0].Position);
+                    }
                 }
             }
         }
@@ -260,11 +290,17 @@ namespace HoolaLucian
             }
         }
 
+        static void UseRTarget()
+        {
+            var target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Physical);
+            if (ForceR && R.IsReady() && target.IsValid && target is Obj_AI_Hero) R.Cast(target.Position);
+        }
         static void Game_OnUpdate(EventArgs args)
         {
             W.Collision = Menu.Item("Nocolision").GetValue<bool>();
             AutoUseQ();
             LaneClear();
+            if (ForceR) UseRTarget();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
         }
@@ -273,6 +309,10 @@ namespace HoolaLucian
             if (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E)
             {
                 AAPassive = true;
+            }
+            if (args.Slot == SpellSlot.E)
+            {
+                Orbwalking.ResetAutoAttackTimer();
             }
             if (args.Slot == SpellSlot.R && ItemData.Youmuus_Ghostblade.GetItem().IsReady())
             {
