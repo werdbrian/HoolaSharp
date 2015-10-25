@@ -23,6 +23,7 @@
 #region
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using SharpDX;
 using Color = System.Drawing.Color;
@@ -102,33 +103,29 @@ namespace HoolaRiven
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
             "xenzhaothrust3", "viktorqbuff"
         };
-        private static readonly string[] OHSP = { "parley", "ezrealmysticshot" };
-
-        // Champs whose auto attacks can't be cancelled
         private static readonly string[] NoCancelChamps = { "Kalista" };
         public static int LastAATick;
         public static bool Attack = true;
         public static bool DisableNextAttack;
         public static bool Move = true;
-        public static bool StopMove = false;
         public static int LastMoveCommandT;
         public static Vector3 LastMoveCommandPosition = Vector3.Zero;
-        public static AttackableUnit _lastTarget;
+        private static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
         private static int _delay;
         private static float _minDistance = 400;
         private static bool _missileLaunched;
+        private static string _championName;
         private static readonly Random _random = new Random(DateTime.Now.Millisecond);
 
         static Orbwalking()
         {
             Player = ObjectManager.Player;
+            _championName = Player.ChampionName;
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
-            MissileClient.OnCreate += MissileClient_OnCreate;
-            Spellbook.OnStopCast += SpellbookOnStopCast;
             Obj_AI_Base.OnDoCast += Obj_AI_Base_OnDoCast;
+            Spellbook.OnStopCast += SpellbookOnStopCast;
         }
-
         /// <summary>
         ///     This event is fired before the player auto attacks.
         /// </summary>
@@ -223,15 +220,6 @@ namespace HoolaRiven
                    Attacks.Contains(name.ToLower());
         }
 
-        public static bool IsOnHit(this string name)
-        {
-            return !name.ToLower().Contains("tower") && !name.ToLower().Contains("turret") && !name.ToLower().Contains("mini") && !name.ToLower().Contains("minion") && name.ToLower().Contains("attack") && !NoAttacks.Contains(name.ToLower()) ||
-            Attacks.Contains(name.ToLower()) || AttackResets.Contains(name.ToLower()) || OHSP.Contains(name.ToLower());
-        }
-
-        /// <summary>
-        ///     Returns the auto-attack range.
-        /// </summary>
         public static float GetRealAutoAttackRange(AttackableUnit target)
         {
             var result = Player.AttackRange + Player.BoundingRadius;
@@ -242,6 +230,9 @@ namespace HoolaRiven
             return result;
         }
 
+        /// <summary>
+        ///     Returns the auto-attack range of the target.
+        /// </summary>
         public static float GetAttackRange(Obj_AI_Hero target)
         {
             var result = target.AttackRange + target.BoundingRadius;
@@ -269,7 +260,7 @@ namespace HoolaRiven
         /// </summary>
         public static float GetMyProjectileSpeed()
         {
-            return IsMelee(Player) || Player.ChampionName == "Azir" ? float.MaxValue : Player.BasicAttack.MissileSpeed;
+            return IsMelee(Player) || _championName == "Azir" || _championName == "Velkoz" || _championName == "Viktor" && Player.HasBuff("ViktorPowerTransferReturn") ? float.MaxValue : Player.BasicAttack.MissileSpeed;
         }
 
         /// <summary>
@@ -277,22 +268,18 @@ namespace HoolaRiven
         /// </summary>
         public static bool CanAttack()
         {
-            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000;
+            return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack;
         }
+
 
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
         public static bool CanMove(float extraWindup)
         {
-            /*if (!Move)
+            if (!Move)
             {
                 return false;
-            }*/
-            // 타 커먼에서 미사일 런치드 무시한것처럼 하면 과연 평캔현상이 사라지려나
-            if (StopMove == false)
-            {
-                return true;
             }
             if (_missileLaunched && Orbwalker.MissileCheck)
             {
@@ -325,51 +312,61 @@ namespace HoolaRiven
         public static void MoveTo(Vector3 position,
             float holdAreaRadius = 0,
             bool overrideTimer = false,
-            bool useFixedDistance = false,
-            bool randomizeMinDistance = false)
+            bool useFixedDistance = true,
+            bool randomizeMinDistance = true)
         {
-            if (Utils.GameTimeTickCount - LastMoveCommandT < _delay && !overrideTimer)
-            {
-                return;
-            }
+            var playerPosition = Player.ServerPosition;
 
-            LastMoveCommandT = Utils.GameTimeTickCount;
-
-            if (Player.ServerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
+            if (playerPosition.Distance(position, true) < holdAreaRadius * holdAreaRadius)
             {
-                if (Player.Path.Count() > 1)
+                if (Player.Path.Length > 0)
                 {
-                    Player.IssueOrder((GameObjectOrder)10, Player.ServerPosition);
-                    Player.IssueOrder(GameObjectOrder.HoldPosition, Player.ServerPosition);
-                    LastMoveCommandPosition = Player.ServerPosition;
+                    Player.IssueOrder(GameObjectOrder.Stop, playerPosition);
+                    LastMoveCommandPosition = playerPosition;
+                    LastMoveCommandT = Utils.GameTimeTickCount - 70;
                 }
                 return;
             }
 
             var point = position;
-            if (useFixedDistance)
+
+            if (Player.Distance(point, true) < 150 * 150)
             {
-                point = Player.ServerPosition +
-                        (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance) *
-                        (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
+                point = playerPosition.Extend(position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
             }
-            else
+            var angle = 0f;
+            var currentPath = Player.GetWaypoints();
+            if (currentPath.Count > 1 && currentPath.PathLength() > 100)
             {
-                if (randomizeMinDistance)
+                var movePath = Player.GetPath(point);
+
+                if (movePath.Length > 1)
                 {
-                    point = Player.ServerPosition +
-                            (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance *
-                            (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
+                    var v1 = currentPath[1] - currentPath[0];
+                    var v2 = movePath[1] - movePath[0];
+                    angle = v1.AngleBetween(v2.To2D());
+                    var distance = movePath.Last().To2D().Distance(currentPath.Last(), true);
+
+                    if ((angle < 10 && distance < 500 * 500) || distance < 50 * 50)
+                    {
+                        return;
+                    }
                 }
-                else if (Player.ServerPosition.Distance(position) > _minDistance)
-                {
-                    point = Player.ServerPosition +
-                            _minDistance * (position.To2D() - Player.ServerPosition.To2D()).Normalized().To3D();
-                }
+            }
+
+            if (Utils.GameTimeTickCount - LastMoveCommandT < (70 + Math.Min(60, Game.Ping)) && !overrideTimer && angle < 60)
+            {
+                return;
+            }
+
+            if (angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
+            {
+                return;
             }
 
             Player.IssueOrder(GameObjectOrder.MoveTo, point);
             LastMoveCommandPosition = point;
+            LastMoveCommandT = Utils.GameTimeTickCount;
         }
 
         /// <summary>
@@ -425,15 +422,6 @@ namespace HoolaRiven
             }
         }
 
-        private static void MissileClient_OnCreate(GameObject sender, EventArgs args)
-        {
-            var missile = sender as MissileClient;
-            if (missile != null && missile.SpellCaster.IsMe && IsAutoAttack(missile.SData.Name))
-            {
-                _missileLaunched = true;
-            }
-        }
-
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
             try
@@ -442,7 +430,7 @@ namespace HoolaRiven
 
                 if (IsAutoAttackReset(spellName) && unit.IsMe)
                 {
-                    Utility.DelayAction.Add(5, ResetAutoAttackTimer);
+                    Utility.DelayAction.Add(250, ResetAutoAttackTimer);
                 }
 
                 if (!IsAutoAttack(spellName))
@@ -453,9 +441,8 @@ namespace HoolaRiven
                 if (unit.IsMe &&
                     (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
                 {
-                    LastAATick = Utils.GameTimeTickCount;
+                    LastAATick = Utils.GameTimeTickCount - Game.Ping / 2;
                     _missileLaunched = false;
-                    StopMove = true;
 
                     if (Spell.Target is Obj_AI_Base)
                     {
@@ -475,6 +462,7 @@ namespace HoolaRiven
                 Console.WriteLine(e);
             }
         }
+
         private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             try
@@ -494,7 +482,7 @@ namespace HoolaRiven
                         FireOnTargetSwitch(target);
                         _lastTarget = target;
                     }
-                    StopMove = false;
+                    _missileLaunched = true;
                     FireAfterAttack(sender, _lastTarget);
 
                 }
@@ -535,6 +523,7 @@ namespace HoolaRiven
             private OrbwalkingMode _mode = OrbwalkingMode.None;
             private Vector3 _orbwalkingPoint;
             private Obj_AI_Minion _prevMinion;
+            public static List<Orbwalker> Instances = new List<Orbwalker>();
 
             public Orbwalker(Menu attachToMenu)
             {
@@ -542,14 +531,17 @@ namespace HoolaRiven
                 /* Drawings submenu */
                 var drawings = new Menu("Drawings", "drawings");
                 drawings.AddItem(
-                    new MenuItem("AACircle", "AACircle")
-                        .SetValue(new Circle(false, Color.FromArgb(255, 255, 0, 255))));
+                    new MenuItem("AACircle", "AACircle").SetShared()
+                        .SetValue(new Circle(true, Color.FromArgb(155, 255, 255, 0))));
                 drawings.AddItem(
-                    new MenuItem("AACircle2", "Enemy AA circle")
-                        .SetValue(new Circle(false, Color.FromArgb(255, 255, 0, 255))));
+                    new MenuItem("AACircle2", "Enemy AA circle").SetShared()
+                        .SetValue(new Circle(false, Color.FromArgb(155, 255, 255, 0))));
                 drawings.AddItem(
-                    new MenuItem("HoldZone", "HoldZone")
-                        .SetValue(new Circle(true, Color.FromArgb(127, Color.WhiteSmoke))));
+                    new MenuItem("HoldZone", "HoldZone").SetShared()
+                        .SetValue(new Circle(false, Color.FromArgb(155, 255, 255, 0))));
+                drawings.AddItem(
+                    new MenuItem("AALineWidth", "Line Width")).SetShared()
+                        .SetValue(new Slider(2, 1, 6));
                 _config.AddSubMenu(drawings);
 
                 /* Misc options */
@@ -557,6 +549,9 @@ namespace HoolaRiven
                 misc.AddItem(
                     new MenuItem("HoldPosRadius", "Hold Position Radius").SetValue(new Slider(65, 0, 250)));
                 misc.AddItem(new MenuItem("PriorizeFarm", "Priorize farm over harass").SetValue(true));
+                misc.AddItem(new MenuItem("AttackWards", "Auto attack wards").SetShared().SetValue(false));
+                misc.AddItem(new MenuItem("AttackPetsnTraps", "Auto attack pets & traps").SetShared().SetValue(true));
+                misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
                 misc.AddItem(new MenuItem("FreezeHealth", "LaneFreeze Damage %").SetValue(new Slider(50, 50, 100)));
                 _config.AddSubMenu(misc);
 
@@ -566,9 +561,6 @@ namespace HoolaRiven
                 _config.AddItem(
                     new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35, 0, 100)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetValue(new Slider(0, 0, 200)));
-                _config.AddItem(
-                    new MenuItem("MovementDelay", "Movement delay").SetValue(new Slider(160, 0, 250)))
-                    .ValueChanged += (sender, args) => SetMovementDelay(args.GetNewValue<Slider>().Value);
                 _config.AddItem(
                     new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0)));
 
@@ -580,9 +572,9 @@ namespace HoolaRiven
                 _config.AddItem(
                     new MenuItem("LastHit", "Last hit").SetValue(new KeyBind('X', KeyBindType.Press)));
 
-                _config.AddItem(new MenuItem("Harass", "Mixed").SetValue(new KeyBind('C', KeyBindType.Press)));
+                _config.AddItem(new MenuItem("Harass", "Harass").SetValue(new KeyBind('C', KeyBindType.Press)));
 
-                _config.AddItem(new MenuItem("Harass.MLH", "Mixed + Lasthit").SetValue(true));
+                _config.AddItem(new MenuItem("Harass.MLH", "Lasthit While Harass").SetValue(true));
 
                 _config.AddItem(
                     new MenuItem("LaneClear", "LaneClear").SetValue(new KeyBind('V', KeyBindType.Press)));
@@ -597,9 +589,11 @@ namespace HoolaRiven
                    new MenuItem("Freeze", "Lane Freeze (Toggle)").SetValue(new KeyBind('H', KeyBindType.Toggle)));
 
                 _delay = _config.Item("MovementDelay").GetValue<Slider>().Value;
+
                 Player = ObjectManager.Player;
                 Game.OnUpdate += GameOnOnGameUpdate;
                 Drawing.OnDraw += DrawingOnOnDraw;
+                Instances.Add(this);
             }
 
             public virtual bool InAutoAttackRange(AttackableUnit target)
@@ -704,9 +698,9 @@ namespace HoolaRiven
                         .Any(
                             minion =>
                                 minion.IsValidTarget() && minion.Team != GameObjectTeam.Neutral &&
-                                InAutoAttackRange(minion) &&
+                                InAutoAttackRange(minion) && MinionManager.IsMinion(minion, false) &&
                                 HealthPrediction.LaneClearHealthPrediction(
-                                    minion, (int)((Player.AttackDelay * 1000)), FarmDelay) <=
+                                    minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay) <=
                                 Player.GetAutoAttackDamage2(minion));
             }
 
@@ -749,7 +743,7 @@ namespace HoolaRiven
                             continue;
                         }
 
-                        if (minion.Team != GameObjectTeam.Neutral && MinionManager.IsMinion(minion, true))
+                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
                         {
                             if (predHealth <= 0)
                             {
@@ -799,7 +793,7 @@ namespace HoolaRiven
                 if (ActiveMode != OrbwalkingMode.LastHit)
                 {
                     var target = TargetSelector.GetTarget(-1, TargetSelector.DamageType.Physical);
-                    if (target.IsValidTarget())
+                    if (target.IsValidTarget() && InAutoAttackRange(target))
                     {
                         return target;
                     }
@@ -808,12 +802,15 @@ namespace HoolaRiven
                 /*Jungle minions*/
                 if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed)
                 {
-                    result =
+                    var jminions =
                         ObjectManager.Get<Obj_AI_Minion>()
                             .Where(
                                 mob =>
-                                    mob.IsValidTarget() && InAutoAttackRange(mob) && mob.Team == GameObjectTeam.Neutral)
-                            .MaxOrDefault(mob => mob.MaxHealth);
+                                    mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) &&
+                                    mob.CharData.BaseSkinName != "gangplankbarrel");
+
+                    result = _config.Item("Smallminionsprio").GetValue<bool>() ? jminions.MinOrDefault(mob => mob.MaxHealth) : jminions.MaxOrDefault(mob => mob.MaxHealth);
+
                     if (result != null)
                     {
                         return result;
@@ -838,14 +835,17 @@ namespace HoolaRiven
 
                         result = (from minion in
                                       ObjectManager.Get<Obj_AI_Minion>()
-                                          .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion))
+                                          .Where(minion => minion.IsValidTarget() && InAutoAttackRange(minion) &&
+                                          (_config.Item("AttackWards").GetValue<bool>() || !MinionManager.IsWard(minion.CharData.BaseSkinName.ToLower())) &&
+                                          (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.CharData.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())) &&
+                                          minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
                                       HealthPrediction.LaneClearHealthPrediction(
-                                          minion, (int)((Player.AttackDelay * 1000)), FarmDelay)
+                                          minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay)
                                   where
                                       predHealth >= 2 * Player.GetAutoAttackDamage2(minion) ||
                                       Math.Abs(predHealth - minion.Health) < float.Epsilon
-                                  select minion).MaxOrDefault(m => m.Health);
+                                  select minion).MaxOrDefault(m => !MinionManager.IsMinion(m, true) ? float.MaxValue : m.Health);
 
                         if (result != null)
                         {
@@ -875,7 +875,7 @@ namespace HoolaRiven
                     var target = GetTarget();
                     Orbwalk(
                         target, (_orbwalkingPoint.To2D().IsValid()) ? _orbwalkingPoint : Game.CursorPos,
-                        _config.Item("ExtraWindup").GetValue<Slider>().Value,
+                        _config.Item("ExtraMoveup").GetValue<Slider>().Value,
                         _config.Item("HoldPosRadius").GetValue<Slider>().Value);
                 }
                 catch (Exception e)
@@ -889,8 +889,9 @@ namespace HoolaRiven
                 if (_config.Item("AACircle").GetValue<Circle>().Active)
                 {
                     Render.Circle.DrawCircle(
-                        Player.Position, GetRealAutoAttackRange(Player) + 0,
-                        _config.Item("AACircle").GetValue<Circle>().Color, 3);
+                        Player.Position, GetRealAutoAttackRange(null) + 65,
+                        _config.Item("AACircle").GetValue<Circle>().Color,
+                        _config.Item("AALineWidth").GetValue<Slider>().Value);
                 }
 
                 if (_config.Item("AACircle2").GetValue<Circle>().Active)
@@ -899,8 +900,9 @@ namespace HoolaRiven
                         HeroManager.Enemies.FindAll(target => target.IsValidTarget(1175)))
                     {
                         Render.Circle.DrawCircle(
-                            target.Position, GetAttackRange(target) + 0,
-                            _config.Item("AACircle2").GetValue<Circle>().Color, 3);
+                            target.Position, GetAttackRange(target),
+                            _config.Item("AACircle2").GetValue<Circle>().Color,
+                            _config.Item("AALineWidth").GetValue<Slider>().Value);
                     }
                 }
 
@@ -908,7 +910,8 @@ namespace HoolaRiven
                 {
                     Render.Circle.DrawCircle(
                         Player.Position, _config.Item("HoldPosRadius").GetValue<Slider>().Value,
-                        _config.Item("HoldZone").GetValue<Circle>().Color, 1);
+                        _config.Item("HoldZone").GetValue<Circle>().Color,
+                        _config.Item("AALineWidth").GetValue<Slider>().Value, true);
                 }
             }
         }

@@ -574,7 +574,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(5) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(10) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
