@@ -27,14 +27,13 @@ using System.Collections.Generic;
 using System.Linq;
 using SharpDX;
 using Color = System.Drawing.Color;
-
 using LeagueSharp;
 using LeagueSharp.Common;
-
 #endregion
 
 namespace HoolaRiven
 {
+
     /// <summary>
     ///     This class offers everything related to auto-attacks and orbwalking.
     /// </summary>
@@ -49,7 +48,6 @@ namespace HoolaRiven
         public delegate void OnNonKillableMinionH(AttackableUnit minion);
 
         public delegate void OnTargetChangeH(AttackableUnit oldTarget, AttackableUnit newTarget);
-
         public enum OrbwalkingMode
         {
             Flee,
@@ -62,37 +60,33 @@ namespace HoolaRiven
             None
         }
 
-        internal static bool HasBuff2(this Obj_AI_Base unit,
-            string buffName,
-            bool dontUseDisplayName = false)
-        {
-            return
-                unit.Buffs.Any(
-                    buff =>
-                        ((dontUseDisplayName &&
-                          String.Equals(buff.Name, buffName, StringComparison.CurrentCultureIgnoreCase)) ||
-                         (!dontUseDisplayName &&
-                          String.Equals(buff.DisplayName, buffName, StringComparison.CurrentCultureIgnoreCase))) &&
-                        buff.IsValidBuff());
-        }
-
         //Spells that reset the attack timer.
         private static readonly string[] AttackResets =
         {
             "dariusnoxiantacticsonh", "fioraflurry", "garenq",
-            "hecarimrapidslash", "jaycehypercharge", "leonashieldofdaybreak", "luciane",
+            "hecarimrapidslash", "jaxempowertwo", "jaycehypercharge", "leonashieldofdaybreak", "luciane", "lucianq",
             "monkeykingdoubleattack", "mordekaisermaceofspades", "nasusq", "nautiluspiercinggaze", "netherblade",
-            "parley", "powerfist", "renektonpreexecute", "rengarq", "shyvanadoubleattack",
+            "parley", "poppydevastatingblow", "powerfist", "renektonpreexecute", "rengarq", "shyvanadoubleattack",
             "sivirw", "takedown", "talonnoxiandiplomacy", "trundletrollsmash", "vaynetumble", "vie", "volibearq",
-            "xenzhaocombotarget", "yorickspectral", "reksaiq"
+            "xenzhaocombotarget", "yorickspectral", "reksaiq", "itemtitanichydracleave"
         };
 
         //Spells that are not attacks even if they have the "attack" word in their name.
         private static readonly string[] NoAttacks =
         {
-            "monkeykingdoubleattack", "RivenMartyR",
-            "shyvanadoubleattack", "shyvanadoubleattackdragon", "zyragraspingplantattack", "zyragraspingplantattack2",
-            "zyragraspingplantattackfire", "zyragraspingplantattack2fire", "viktorpowertransfer", "sivirwattackbounce"
+            "volleyattack", "volleyattackwithsound", "jarvanivcataclysmattack",
+            "monkeykingdoubleattack", "shyvanadoubleattack",
+            "shyvanadoubleattackdragon", "zyragraspingplantattack",
+            "zyragraspingplantattack2", "zyragraspingplantattackfire",
+            "zyragraspingplantattack2fire", "viktorpowertransfer",
+            "sivirwattackbounce", "asheqattacknoonhit",
+            "elisespiderlingbasicattack", "heimertyellowbasicattack",
+            "heimertyellowbasicattack2", "heimertbluebasicattack",
+            "annietibbersbasicattack", "annietibbersbasicattack2",
+            "yorickdecayedghoulbasicattack", "yorickravenousghoulbasicattack",
+            "yorickspectralghoulbasicattack", "malzaharvoidlingbasicattack",
+            "malzaharvoidlingbasicattack2", "malzaharvoidlingbasicattack3",
+            "kindredwolfbasicattack", "kindredbasicattackoverridelightbombfinal"
         };
 
         //Spells that are attacks even if they dont have the "attack" word in their name.
@@ -103,6 +97,8 @@ namespace HoolaRiven
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
             "xenzhaothrust3", "viktorqbuff"
         };
+
+        // Champs whose auto attacks can't be cancelled
         private static readonly string[] NoCancelChamps = { "Kalista" };
         public static int LastAATick;
         public static bool Attack = true;
@@ -112,7 +108,6 @@ namespace HoolaRiven
         public static Vector3 LastMoveCommandPosition = Vector3.Zero;
         private static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
-        private static int _delay;
         private static float _minDistance = 400;
         private static bool _missileLaunched;
         private static string _championName;
@@ -126,6 +121,7 @@ namespace HoolaRiven
             Obj_AI_Base.OnDoCast += Obj_AI_Base_OnDoCast;
             Spellbook.OnStopCast += SpellbookOnStopCast;
         }
+
         /// <summary>
         ///     This event is fired before the player auto attacks.
         /// </summary>
@@ -220,6 +216,9 @@ namespace HoolaRiven
                    Attacks.Contains(name.ToLower());
         }
 
+        /// <summary>
+        ///     Returns the auto-attack range of local player with respect to the target.
+        /// </summary>
         public static float GetRealAutoAttackRange(AttackableUnit target)
         {
             var result = Player.AttackRange + Player.BoundingRadius;
@@ -271,7 +270,6 @@ namespace HoolaRiven
             return Utils.GameTimeTickCount + Game.Ping / 2 + 25 >= LastAATick + Player.AttackDelay * 1000 && Attack;
         }
 
-
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
@@ -281,18 +279,21 @@ namespace HoolaRiven
             {
                 return false;
             }
+
             if (_missileLaunched && Orbwalker.MissileCheck)
             {
                 return true;
             }
 
-            return NoCancelChamps.Contains(Player.ChampionName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
+            var localExtraWindup = 0;
+            if (_championName == "Rengar" && (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp")))
+            {
+                localExtraWindup = 200;
+            }
+
+            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup + localExtraWindup);
         }
 
-        public static void SetMovementDelay(int delay)
-        {
-            _delay = delay;
-        }
 
         public static void SetMinimumOrbwalkDistance(float d)
         {
@@ -374,7 +375,7 @@ namespace HoolaRiven
         /// </summary>
         public static void Orbwalk(AttackableUnit target,
             Vector3 position,
-            float extraMoveup = 0,
+            float extraMoveup = 5,
             float holdAreaRadius = 0,
             bool useFixedDistance = true,
             bool randomizeMinDistance = true)
@@ -422,6 +423,26 @@ namespace HoolaRiven
             }
         }
 
+        private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (sender.IsMe && IsAutoAttack(args.SData.Name))
+            {
+                if (Game.Ping <= 30) //First world problems kappa
+                {
+                    Utility.DelayAction.Add(30, () => Obj_AI_Base_OnDoCast_Delayed(sender, args));
+                    return;
+                }
+
+                Obj_AI_Base_OnDoCast_Delayed(sender, args);
+            }
+        }
+
+        private static void Obj_AI_Base_OnDoCast_Delayed(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            FireAfterAttack(sender, args.Target as AttackableUnit);
+            _missileLaunched = true;
+        }
+
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
             try
@@ -456,36 +477,6 @@ namespace HoolaRiven
                 }
 
                 FireOnAttack(unit, _lastTarget);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-
-        private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-            try
-            {
-                var spellName = args.SData.Name;
-
-                if (!IsAutoAttack(spellName))
-                {
-                    return;
-                }
-                if (sender.IsMe &&
-                    (args.Target is Obj_AI_Base || args.Target is Obj_BarracksDampener || args.Target is Obj_HQ))
-                {
-                    var target = (Obj_AI_Base)args.Target;
-                    if (target.IsValid)
-                    {
-                        FireOnTargetSwitch(target);
-                        _lastTarget = target;
-                    }
-                    _missileLaunched = true;
-                    FireAfterAttack(sender, _lastTarget);
-
-                }
             }
             catch (Exception e)
             {
@@ -541,7 +532,7 @@ namespace HoolaRiven
                         .SetValue(new Circle(false, Color.FromArgb(155, 255, 255, 0))));
                 drawings.AddItem(
                     new MenuItem("AALineWidth", "Line Width")).SetShared()
-                        .SetValue(new Slider(2, 1, 6));
+                    .SetValue(new Slider(2, 1, 6));
                 _config.AddSubMenu(drawings);
 
                 /* Misc options */
@@ -552,17 +543,16 @@ namespace HoolaRiven
                 misc.AddItem(new MenuItem("AttackWards", "Auto attack wards").SetShared().SetValue(false));
                 misc.AddItem(new MenuItem("AttackPetsnTraps", "Auto attack pets & traps").SetShared().SetValue(true));
                 misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
-                misc.AddItem(new MenuItem("FreezeHealth", "LaneFreeze Damage %").SetValue(new Slider(50, 50, 100)));
                 _config.AddSubMenu(misc);
 
                 /* Missile check */
                 _config.AddItem(new MenuItem("MissileCheck", "Use Missile Check").SetValue(false));
                 /* Delay sliders */
                 _config.AddItem(
-                    new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35, 0, 100)));
+                    new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetValue(new Slider(0, 0, 200)));
                 _config.AddItem(
-                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0)));
+                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(5, 5, 100)));
 
 
                 /*Load the menu*/
@@ -585,10 +575,6 @@ namespace HoolaRiven
                     new MenuItem("Burst", "Burst").SetValue(new KeyBind('T', KeyBindType.Press)));
                 _config.AddItem(
                     new MenuItem("FastHarass", "FastHarass").SetValue(new KeyBind('Y', KeyBindType.Press)));
-                _config.AddItem(
-                   new MenuItem("Freeze", "Lane Freeze (Toggle)").SetValue(new KeyBind('H', KeyBindType.Toggle)));
-
-                _delay = _config.Item("MovementDelay").GetValue<Slider>().Value;
 
                 Player = ObjectManager.Player;
                 Game.OnUpdate += GameOnOnGameUpdate;
@@ -610,6 +596,7 @@ namespace HoolaRiven
             {
                 get { return _config.Item("MissileCheck").GetValue<bool>(); }
             }
+
             public OrbwalkingMode ActiveMode
             {
                 get
@@ -701,7 +688,7 @@ namespace HoolaRiven
                                 InAutoAttackRange(minion) && MinionManager.IsMinion(minion, false) &&
                                 HealthPrediction.LaneClearHealthPrediction(
                                     minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay) <=
-                                Player.GetAutoAttackDamage2(minion));
+                                Player.GetAutoAttackDamage(minion));
             }
 
             public virtual AttackableUnit GetTarget()
@@ -712,7 +699,7 @@ namespace HoolaRiven
                     !_config.Item("PriorizeFarm").GetValue<bool>())
                 {
                     var target = TargetSelector.GetTarget(-1, TargetSelector.DamageType.Physical);
-                    if (target != null)
+                    if (target != null && InAutoAttackRange(target))
                     {
                         return target;
                     }
@@ -722,26 +709,21 @@ namespace HoolaRiven
                 if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed && _config.Item("Harass.MLH").GetValue<bool>() ||
                     ActiveMode == OrbwalkingMode.LastHit)
                 {
-                    var FreezeActive = _config.Item("Freeze").GetValue<KeyBind>().Active && (ActiveMode != OrbwalkingMode.LaneClear);
                     var MinionList =
                         ObjectManager.Get<Obj_AI_Minion>()
                             .Where(
                                 minion =>
-                                    minion.IsValidTarget() && InAutoAttackRange(minion) &&
-                                    minion.Health <
-                                    Player.GetAutoAttackDamage2(minion, true) * 2);
-
+                                    minion.IsValidTarget() && InAutoAttackRange(minion))
+                                    .OrderByDescending(minion => minion.CharData.BaseSkinName.Contains("Siege"))
+                                    .ThenBy(minion => minion.CharData.BaseSkinName.Contains("Super"))
+                                    .ThenBy(minion => minion.Health)
+                                    .ThenByDescending(minion => minion.MaxHealth);
 
                     foreach (var minion in MinionList)
                     {
-                        var FreezeDamage = Player.GetAutoAttackDamage2(minion, true) * (_config.Item("FreezeHealth").GetValue<Slider>().Value / 100f);
-                        var t = (int)(Player.AttackCastDelay * 1000) - 100 + 1000 * (int)Player.Distance(minion, false) / (int)GetMyProjectileSpeed();
+                        var t = (int)(Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
+                                1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)GetMyProjectileSpeed();
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
-
-                        if (FreezeActive && predHealth.Equals(minion.Health))
-                        {
-                            continue;
-                        }
 
                         if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
                         {
@@ -750,7 +732,7 @@ namespace HoolaRiven
                                 FireOnNonKillableMinion(minion);
                             }
 
-                            if (predHealth > 0 && predHealth <= (FreezeActive ? FreezeDamage : Player.GetAutoAttackDamage2(minion, true)))
+                            if (predHealth > 0 && predHealth <= Player.GetAutoAttackDamage(minion, true))
                             {
                                 return minion;
                             }
@@ -825,8 +807,8 @@ namespace HoolaRiven
                         if (_prevMinion.IsValidTarget() && InAutoAttackRange(_prevMinion))
                         {
                             var predHealth = HealthPrediction.LaneClearHealthPrediction(
-                                _prevMinion, (int)((Player.AttackDelay * 1000)), FarmDelay);
-                            if (predHealth >= 2 * Player.GetAutoAttackDamage2(_prevMinion) ||
+                                _prevMinion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay);
+                            if (predHealth >= 2 * Player.GetAutoAttackDamage(_prevMinion) ||
                                 Math.Abs(predHealth - _prevMinion.Health) < float.Epsilon)
                             {
                                 return _prevMinion;
@@ -843,7 +825,7 @@ namespace HoolaRiven
                                       HealthPrediction.LaneClearHealthPrediction(
                                           minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay)
                                   where
-                                      predHealth >= 2 * Player.GetAutoAttackDamage2(minion) ||
+                                      predHealth >= 2 * Player.GetAutoAttackDamage(minion) ||
                                       Math.Abs(predHealth - minion.Health) < float.Epsilon
                                   select minion).MaxOrDefault(m => !MinionManager.IsMinion(m, true) ? float.MaxValue : m.Health);
 
@@ -913,6 +895,7 @@ namespace HoolaRiven
                         _config.Item("HoldZone").GetValue<Circle>().Color,
                         _config.Item("AALineWidth").GetValue<Slider>().Value, true);
                 }
+
             }
         }
     }
