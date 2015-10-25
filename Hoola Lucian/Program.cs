@@ -16,6 +16,7 @@ namespace HoolaLucian
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, Q1, W, E;
+        private static bool AAPassive;
         private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
 
@@ -73,21 +74,22 @@ namespace HoolaLucian
             var spellName = args.SData.Name;
             if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
 
+            AAPassive = false;
             if (args.Target is Obj_AI_Hero)
             {
                 var target = (Obj_AI_Base)args.Target;
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid)
                 {
                     if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast();
-                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(Game.CursorPos);
-                    else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
-                    else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
+                    if (E.IsReady() && !AAPassive) E.Cast(Game.CursorPos);
+                    if (Q.IsReady() && !E.IsReady() && !AAPassive) Q.Cast(target);
+                    if (!E.IsReady() && !Q.IsReady() && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(Game.CursorPos);
-                    else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
-                    else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
+                    if (E.IsReady() && !AAPassive) E.Cast(Game.CursorPos);
+                    if (Q.IsReady() && !E.IsReady() && !AAPassive) Q.Cast(target);
+                    if (!E.IsReady() && !Q.IsReady() && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
             }
         }
@@ -145,6 +147,10 @@ namespace HoolaLucian
         }
         static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
         {
+            if (args.Slot == SpellSlot.Q || args.Slot == SpellSlot.W || args.Slot == SpellSlot.E)
+            {
+                AAPassive = true;
+            }
             if (args.Slot == SpellSlot.R && ItemData.Youmuus_Ghostblade.GetItem().IsReady())
             {
                 ItemData.Youmuus_Ghostblade.GetItem().Cast();

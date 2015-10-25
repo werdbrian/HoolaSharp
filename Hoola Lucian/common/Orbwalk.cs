@@ -239,19 +239,19 @@ namespace HoolaLucian
             return result;
         }
 
-		/// <summary>
-		///     Returns the auto-attack range of the target.
-		/// </summary>
-		public static float GetAttackRange(Obj_AI_Hero target)
-		{
-			var result = target.AttackRange + target.BoundingRadius;
-			return result;
-		}
+        /// <summary>
+        ///     Returns the auto-attack range of the target.
+        /// </summary>
+        public static float GetAttackRange(Obj_AI_Hero target)
+        {
+            var result = target.AttackRange + target.BoundingRadius;
+            return result;
+        }
 
-		/// <summary>
-		///     Returns true if the target is in auto-attack range.
-		/// </summary>
-		public static bool InAutoAttackRange(AttackableUnit target)
+        /// <summary>
+        ///     Returns true if the target is in auto-attack range.
+        /// </summary>
+        public static bool InAutoAttackRange(AttackableUnit target)
         {
             if (!target.IsValidTarget())
             {
@@ -296,14 +296,14 @@ namespace HoolaLucian
             }
 
             var localExtraWindup = 0;
-            if(_championName == "Rengar" && (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp")))
+            if (_championName == "Rengar" && (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp")))
             {
                 localExtraWindup = 200;
             }
 
-            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 985 + extraWindup + localExtraWindup);
+            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 990 + extraWindup + localExtraWindup);
         }
-        
+
 
         public static void SetMinimumOrbwalkDistance(float d)
         {
@@ -341,7 +341,7 @@ namespace HoolaLucian
 
             var point = position;
 
-            if(Player.Distance(point, true) < 150 * 150)
+            if (Player.Distance(point, true) < 150 * 150)
             {
                 point = playerPosition.Extend(position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
             }
@@ -351,26 +351,26 @@ namespace HoolaLucian
             {
                 var movePath = Player.GetPath(point);
 
-                if(movePath.Length > 1)
+                if (movePath.Length > 1)
                 {
                     var v1 = currentPath[1] - currentPath[0];
                     var v2 = movePath[1] - movePath[0];
                     angle = v1.AngleBetween(v2.To2D());
                     var distance = movePath.Last().To2D().Distance(currentPath.Last(), true);
 
-                    if ((angle < 10 && distance < 500*500) || distance < 50*50)
+                    if ((angle < 10 && distance < 500 * 500) || distance < 50 * 50)
                     {
                         return;
                     }
                 }
             }
-            
+
             if (Utils.GameTimeTickCount - LastMoveCommandT < (70 + Math.Min(60, Game.Ping)) && !overrideTimer && angle < 60)
             {
                 return;
             }
 
-            if(angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
+            if (angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
             {
                 return;
             }
@@ -435,9 +435,9 @@ namespace HoolaLucian
 
         private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
-            if(sender.IsMe && IsAutoAttack(args.SData.Name))
+            if (sender.IsMe && IsAutoAttack(args.SData.Name))
             {
-                if(Game.Ping <= 30) //First world problems kappa
+                if (Game.Ping <= 30) //First world problems kappa
                 {
                     Utility.DelayAction.Add(30, () => Obj_AI_Base_OnDoCast_Delayed(sender, args));
                     return;
@@ -452,7 +452,7 @@ namespace HoolaLucian
             FireAfterAttack(sender, args.Target as AttackableUnit);
             _missileLaunched = true;
         }
-        
+
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
             try
@@ -562,7 +562,7 @@ namespace HoolaLucian
                     new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetValue(new Slider(0, 0, 200)));
                 _config.AddItem(
-                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0, 0, 100)));
+                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(20, 20, 100)));
 
 
                 /*Load the menu*/
@@ -613,7 +613,7 @@ namespace HoolaLucian
                     {
                         return OrbwalkingMode.Combo;
                     }
-                    
+
                     if (_config.Item("LaneClear").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.LaneClear;
@@ -710,16 +710,16 @@ namespace HoolaLucian
                     foreach (var minion in MinionList)
                     {
                         var t = (int)(Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
-                                1000 * (int) Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)GetMyProjectileSpeed();
+                                1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)GetMyProjectileSpeed();
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
 
-                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>()) ))
+                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
                         {
                             if (predHealth <= 0)
                             {
                                 FireOnNonKillableMinion(minion);
                             }
-                            
+
                             if (predHealth > 0 && predHealth <= Player.GetAutoAttackDamage2(minion, true))
                             {
                                 return minion;
@@ -772,16 +772,16 @@ namespace HoolaLucian
                 /*Jungle minions*/
                 if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed)
                 {
-	                var jminions =
-		                ObjectManager.Get<Obj_AI_Minion>()
-			                .Where(
-				                mob =>
-					                mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) &&
-					                mob.CharData.BaseSkinName != "gangplankbarrel");
-       
-				    result = _config.Item("Smallminionsprio").GetValue<bool>() ? jminions.MinOrDefault(mob => mob.MaxHealth) : jminions.MaxOrDefault(mob => mob.MaxHealth);
+                    var jminions =
+                        ObjectManager.Get<Obj_AI_Minion>()
+                            .Where(
+                                mob =>
+                                    mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) &&
+                                    mob.CharData.BaseSkinName != "gangplankbarrel");
 
-					if (result != null)
+                    result = _config.Item("Smallminionsprio").GetValue<bool>() ? jminions.MinOrDefault(mob => mob.MaxHealth) : jminions.MaxOrDefault(mob => mob.MaxHealth);
+
+                    if (result != null)
                     {
                         return result;
                     }
@@ -816,7 +816,7 @@ namespace HoolaLucian
                                       predHealth >= 2 * Player.GetAutoAttackDamage2(minion) ||
                                       Math.Abs(predHealth - minion.Health) < float.Epsilon
                                   select minion).MaxOrDefault(m => !MinionManager.IsMinion(m, true) ? float.MaxValue : m.Health);
-                        
+
                         if (result != null)
                         {
                             _prevMinion = (Obj_AI_Minion)result;
@@ -871,7 +871,7 @@ namespace HoolaLucian
                     {
                         Render.Circle.DrawCircle(
                             target.Position, GetAttackRange(target),
-                            _config.Item("AACircle2").GetValue<Circle>().Color, 
+                            _config.Item("AACircle2").GetValue<Circle>().Color,
                             _config.Item("AALineWidth").GetValue<Slider>().Value);
                     }
                 }
