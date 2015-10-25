@@ -307,6 +307,7 @@ namespace HoolaRiven
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass) FastHarass();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst) Burst();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Flee) Flee();
+            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Orbwalker.SetAttack(true);
         }
 
         static void killsteal()
