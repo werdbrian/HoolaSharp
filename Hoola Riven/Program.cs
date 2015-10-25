@@ -132,10 +132,56 @@ namespace HoolaRiven
                         }
                         else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
                     }
-                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass)
                     {
-                        UseCastItem(300);
-                        forcecastQ(QTarget);
+                        if (W.IsReady() && InWRange(target))
+                        {
+                            UseCastItem(500);
+                            UseW(500);
+                            if (Q.IsReady() && QStack != 3)
+                            {
+                                forcecastQ(QTarget);
+                            }
+                        }
+                        else if (Q.IsReady())
+                        {
+                            UseCastItem(500);
+                            forcecastQ(QTarget);
+                        }
+                        else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target) && !InWRange(target))
+                        {
+                            E.Cast(target.Position);
+                        }
+                    }
+
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst)
+                    {
+                        if (R.IsReady() && R.Instance.Name == IsSecondR)
+                        {
+                            UseCastItem(900);
+                            UseR(900);
+                            forcecastQ(target);
+                        }
+                        else if (Q.IsReady())
+                        {
+                            UseCastItem(500);
+                            forcecastQ(QTarget);
+                        }
+                    }
+
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+                    {
+                        if (Q.IsReady())
+                        {
+                            UseCastItem(300);
+                            forcecastQ(target);
+                        }
+                        else if (W.IsReady() && InWRange(target))
+                        {
+                            UseCastItem(300);
+                            W.Cast();
+                        }
+                        else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
                     }
                 }
             }
