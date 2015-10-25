@@ -48,6 +48,7 @@ namespace HoolaRiven
         private static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
         private static bool FirstHydra { get { return Menu.Item("FirstHydra").GetValue<bool>(); } }
         private static bool LaneQ { get { return Menu.Item("LaneQ").GetValue<bool>(); } }
+        private static bool Youmu { get { return Menu.Item("youmu").GetValue<bool>(); } }
 
         public Riven()
         {
@@ -90,22 +91,22 @@ namespace HoolaRiven
                             UseCastItem(300);
                             forcecastQ(Minions[0]);
                         }
-                        if (LaneW != 0 && (!Q.IsReady() || !LaneQ) && W.IsReady() && Minions.Count >= LaneW)
+                        if (LaneW != 0 && (!Q.IsReady() || !LaneQ) && W.IsReady() && Minions.Count != 0 && Minions.Count >= LaneW && Minions[0].IsValid)
                         {
                             UseCastItem(300);
                             UseW(300);
                         }
                         if (LaneE && (!Q.IsReady() || !LaneQ) && (!W.IsReady() || LaneW == 0) && E.IsReady() && Minions.Count != 0) E.Cast(Minions[0].Position);
                         var Mobs = MinionManager.GetMinions(120 + Player.BoundingRadius + 70, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
-                        if (Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget())
+                        if (Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValid)
                         {
                             UseCastItem(300);
                             forcecastQ(Mobs[0]);
                         }
-                        if (W.IsReady() && !Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget())
+                        if (W.IsReady() && !Q.IsReady() && Mobs.Count != 0 && Mobs[0].IsValid)
                             UseCastItem(300);
                         W.Cast();
-                        if (E.IsReady() && !Q.IsReady() && !W.IsReady() && Mobs.Count != 0 && Mobs[0].IsValidTarget()) E.Cast(Mobs[0].Position);
+                        if (E.IsReady() && !Q.IsReady() && !W.IsReady() && Mobs.Count != 0 && Mobs[0].IsValid) E.Cast(Mobs[0].Position);
                     }
                 }
             }
@@ -190,6 +191,7 @@ namespace HoolaRiven
             Menu.AddSubMenu(Lane);
             var Misc = new Menu("Misc", "Misc");
 
+            Misc.AddItem(new MenuItem("youmu", "Use Youmus When E").SetValue(false));
             Misc.AddItem(new MenuItem("FirstHydra", "Flash Burst Hydra Cast before W").SetValue(false));
             Misc.AddItem(new MenuItem("Qstrange", "Strange Q For Speed").SetValue(false));
             Misc.AddItem(new MenuItem("Winterrupt", "W interrupt").SetValue(true));
@@ -530,7 +532,7 @@ namespace HoolaRiven
                 if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Game.Say("/d");
                 QStack += 1;
             }
-            if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)) if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear) CastYoumoo();
+            if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)) if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear && Youmu) CastYoumoo();
             if (args.SData.Name.Contains("rivenizunablade"))
             {
                 var target = TargetSelector.GetSelectedTarget();
