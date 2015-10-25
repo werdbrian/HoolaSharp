@@ -18,6 +18,7 @@ namespace HoolaLucian
         private static Spell Q, Q1, W, E;
         private static bool AAPassive;
         private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
+        private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
 
         static void Main()
@@ -65,6 +66,9 @@ namespace HoolaLucian
             Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('T', KeyBindType.Toggle)));
             Menu.AddSubMenu(Auto);
 
+            var killsteal = new Menu("killsteal", "Killsteal");
+            killsteal.AddItem(new MenuItem("KillstealQ", "Killsteal Q").SetValue(true));
+            Menu.AddSubMenu(killsteal);
 
             Menu.AddToMainMenu();
         }
@@ -74,6 +78,34 @@ namespace HoolaLucian
             var spellName = args.SData.Name;
             if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
 
+            if (args.Target is Obj_AI_Hero)
+            {
+                var target = (Obj_AI_Base)args.Target;
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid)
+                {
+                    Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                }
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
+                {
+                    Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                }
+            }
+        }
+
+        static void killsteal()
+        {
+            if (KillstealQ && Q.IsReady())
+            {
+                var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(Q.Range) && !x.IsZombie);
+                foreach (var target in targets)
+                {
+                    if (target.Health < Q.GetDamage2(target) && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
+                        Q.Cast(target);
+                }
+            }
+        }
+        private static void OnDoCastDelayed(GameObjectProcessSpellCastEventArgs args)
+        {
             AAPassive = false;
             if (args.Target is Obj_AI_Hero)
             {
@@ -83,7 +115,7 @@ namespace HoolaLucian
                     if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast();
                     if (E.IsReady() && !AAPassive) E.Cast(Game.CursorPos);
                     if (Q.IsReady() && !E.IsReady() && !AAPassive) Q.Cast(target);
-                    if (!E.IsReady() && !Q.IsReady() && W.IsReady() && !AAPassive) W.Cast(target.Position);
+                    if (!E.IsReady() && !Q.IsReady() && W.IsReady() && !AAPassive && Orbwalking.CanMove(10)) W.Cast(target.Position);
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
@@ -143,6 +175,7 @@ namespace HoolaLucian
         static void Game_OnUpdate(EventArgs args)
         {
             AutoUseQ();
+            killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
         }
         static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
