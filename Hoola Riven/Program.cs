@@ -84,7 +84,7 @@ namespace HoolaRiven
                 if (Dind)
                 {
                     Indicator.unit = enemy;
-                    Indicator.drawDmg(getComboDamage(enemy), new SharpDX.ColorBGRA(255, 104, 0, 170));
+                    Indicator.drawDmg(getComboDamage(enemy), new SharpDX.ColorBGRA(255, 204, 0, 170));
                 }
 
             }
