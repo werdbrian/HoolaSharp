@@ -12,6 +12,7 @@ namespace HoolaRiven
         static Menu Menu;
         static Orbwalking.Orbwalker Orbwalker;
         static Obj_AI_Hero Player = ObjectManager.Player;
+        static HpBarIndicator Indicator = new HpBarIndicator();
         static string IsFirstR = "RivenFengShuiEngine";
         static string IsSecondR = "rivenizunablade";
         static SpellSlot Flash = Player.GetSpellSlot("summonerFlash");
@@ -65,11 +66,28 @@ namespace HoolaRiven
 
             Game.OnUpdate += Game_OnGameUpdate;
             Drawing.OnDraw += Drawing_OnDraw;
+            Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnProcessSpellCast += OnCast;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
             Obj_AI_Base.OnProcessSpellCast += OnCasting;
             Interrupter2.OnInterruptableTarget += interrupt;
+        }
+
+        static void Drawing_OnEndScene(EventArgs args)
+        {
+            foreach (
+                var enemy in
+                    ObjectManager.Get<Obj_AI_Hero>()
+                        .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
+            {
+                if (Dind)
+                {
+                    Indicator.unit = enemy;
+                    Indicator.drawDmg(getComboDamage(enemy), new SharpDX.ColorBGRA(0, 255, 255, 120));
+                }
+
+            }
         }
 
         static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
@@ -881,7 +899,7 @@ namespace HoolaRiven
         }
 
 
-        static float getComboDamage2(Obj_AI_Base enemy)
+        static float getComboDamage(Obj_AI_Base enemy)
         {
             if (enemy != null)
             {
