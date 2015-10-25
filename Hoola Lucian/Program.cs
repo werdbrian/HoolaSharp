@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Windows.Forms.VisualStyles;
 using LeagueSharp;
 using LeagueSharp.Common;
 using Color = System.Drawing.Color;
@@ -35,7 +36,7 @@ namespace HoolaLucian
             W = new Spell(SpellSlot.W, 1200, TargetSelector.DamageType.Magical);
             E = new Spell(SpellSlot.E, 475f);
 
-            OnGameLoad();
+            OnMenuLoad();
 
             Q.SetTargetted(0.25f, 1400f);
             Q1.SetSkillshot(0.5f, 65, float.MaxValue, false, SkillshotType.SkillshotLine);
@@ -46,7 +47,7 @@ namespace HoolaLucian
             Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnDoCast += OnDoCast;
         }
-        private static void OnGameLoad()
+        private static void OnMenuLoad()
         {
             Menu = new Menu("Hoola Lucian", "hoolalucian", true);
 
@@ -56,6 +57,11 @@ namespace HoolaLucian
             var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
             TargetSelector.AddToMenu(targetSelectorMenu);
             Menu.AddSubMenu(targetSelectorMenu);
+
+
+            var Misc = new Menu("Misc", "Misc");
+            Misc.AddItem(new MenuItem("Nocolision", "Nocolision W").SetValue(true));
+            Menu.AddSubMenu(Misc);
 
 
             var Harass = new Menu("Harass", "Harass");
@@ -174,6 +180,7 @@ namespace HoolaLucian
 
         static void Game_OnUpdate(EventArgs args)
         {
+            W.Collision = Menu.Item("Nocolision").GetValue<bool>();
             AutoUseQ();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
