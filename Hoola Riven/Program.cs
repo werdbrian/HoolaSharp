@@ -462,7 +462,7 @@ namespace HoolaRiven
                 {
                     E.Cast(target.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(220, () => FlashW());
+                    Utility.DelayAction.Add(180, () => FlashW());
                 }
                 else if (Flash != SpellSlot.Unknown && Flash.IsReady()
                     && R.IsReady() && R.Instance.Name == IsFirstR && (Player.Distance(target.Position) <= 850 && Player.Distance(target.Position) >= 400 + Player.AttackRange + 70) && FirstHydra && HasItem())
@@ -470,25 +470,7 @@ namespace HoolaRiven
                     E.Cast(target.Position);
                     R.Cast();
                     UseCastItem(200);
-                    Utility.DelayAction.Add(230, () => FlashW());
-                }
-                else if (R.IsReady() && R.Instance.Name == IsFirstR &&
-                         (Player.Distance(target.Position) < 450 + Player.AttackRange + 70 &&
-                          Player.Distance(target.Position) >= 320 + Player.AttackRange + 70) && Q.IsReady() && W.IsReady())
-                {
-                    E.Cast(target.Position);
-                    R.Cast();
-                    Utility.DelayAction.Add(200, () => Q.Cast(target.ServerPosition));
-                    Utility.DelayAction.Add(300, () => UseW(1000));
-
-                }
-                else if (R.IsReady() && R.Instance.Name == IsFirstR &&
-                         Player.Distance(target.Position) < 320 + Player.AttackRange + 70 && Q.IsReady() && W.IsReady())
-                {
-                    E.Cast(target.Position);
-                    R.Cast();
-                    Utility.DelayAction.Add(180, () => UseW(1000));
-
+                    Utility.DelayAction.Add(200, () => FlashW());
                 }
             }
         }
@@ -609,7 +591,7 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(15) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit))
+            if (forceQ && Orbwalking.CanMove(5) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
