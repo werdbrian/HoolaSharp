@@ -76,17 +76,16 @@ namespace HoolaLucian
             if (args.Target is Obj_AI_Hero)
             {
                 var target = (Obj_AI_Base)args.Target;
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid && target != null)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid)
                 {
                     if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast();
                     if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(Game.CursorPos);
                     else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
                     else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
                 }
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid && target != null)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    var edir = Player.ServerPosition.Extend(target.Position, 1);
-                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(edir);
+                    if (E.IsReady() && Orbwalking.CanMove(5)) E.Cast(Game.CursorPos);
                     else if (Q.IsReady() && Orbwalking.CanMove(5)) Q.Cast(target);
                     else if (W.IsReady() && Orbwalking.CanMove(5)) W.Cast(target.Position);
                 }
