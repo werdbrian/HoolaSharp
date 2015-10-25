@@ -8,7 +8,7 @@ using ItemData = LeagueSharp.Common.Data.ItemData;
 namespace HoolaRiven
 {
     public class Program
-    {
+    { 
         static Menu Menu;
         static Orbwalking.Orbwalker Orbwalker;
         static Obj_AI_Hero Player = ObjectManager.Player;
