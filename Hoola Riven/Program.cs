@@ -186,8 +186,8 @@ namespace HoolaRiven
                         if (R.IsReady() && R.Instance.Name == IsSecondR)
                         {
                             UseCastItem(900);
-                            UseR(900);
-                            forcecastQ(target);
+                            Utility.DelayAction.Add(30, () => UseR(900));
+                            Utility.DelayAction.Add(50, () => forcecastQ(target));
                         }
                         else if (Q.IsReady())
                         {
