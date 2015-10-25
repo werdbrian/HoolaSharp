@@ -17,6 +17,7 @@ namespace HoolaLucian
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, Q1, W, E, R;
+        private static bool rstate;
         private static bool AAPassive;
         private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
         private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
@@ -293,10 +294,11 @@ namespace HoolaLucian
         static void UseRTarget()
         {
             var target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Physical);
-            if (ForceR && R.IsReady() && target.IsValid && target is Obj_AI_Hero) R.Cast(target.Position);
+            if (ForceR && !rstate && R.IsReady() && target.IsValid && target is Obj_AI_Hero) R.Cast(target.Position);
         }
         static void Game_OnUpdate(EventArgs args)
         {
+            if (!R.IsReady(10000) && rstate) rstate = false;
             W.Collision = Menu.Item("Nocolision").GetValue<bool>();
             AutoUseQ();
             LaneClear();
@@ -314,8 +316,9 @@ namespace HoolaLucian
             {
                 Orbwalking.ResetAutoAttackTimer();
             }
-            if (args.Slot == SpellSlot.R && ItemData.Youmuus_Ghostblade.GetItem().IsReady())
+            if (args.Slot == SpellSlot.R)
             {
+                rstate = true;
                 ItemData.Youmuus_Ghostblade.GetItem().Cast();
             }
         }
