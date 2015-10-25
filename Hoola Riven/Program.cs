@@ -154,6 +154,15 @@ namespace HoolaRiven
                         }
                     }
 
+                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+                    {
+                        if (QStack == 2 && Q.IsReady())
+                        {
+                            CastItem();
+                            forcecastQ(QTarget);
+                        }
+                    }
+
                     if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst)
                     {
                         if (R.IsReady() && R.Instance.Name == IsSecondR)
