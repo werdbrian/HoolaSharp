@@ -21,6 +21,7 @@ namespace HoolaLucian
         private static bool HEXQ { get { return Menu.Item("HEXQ").GetValue<bool>(); } }
         private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
+        private static int MinMana { get { return Menu.Item("MinMana").GetValue<Slider>().Value; } }
 
         static void Main()
         {
@@ -70,6 +71,7 @@ namespace HoolaLucian
 
             var Auto = new Menu("Auto", "Auto");
             Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('T', KeyBindType.Toggle)));
+            Auto.AddItem(new MenuItem("MinMana", "Min Mana (%)").SetValue(new Slider(80)));
             Menu.AddSubMenu(Auto);
 
             var killsteal = new Menu("killsteal", "Killsteal");
@@ -157,7 +159,7 @@ namespace HoolaLucian
 
         static void AutoUseQ()
         {
-            if (Q.IsReady() && AutoQ)
+            if (Q.IsReady() && AutoQ && Player.ManaPercent > MinMana)
             {
                 var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
                 if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
