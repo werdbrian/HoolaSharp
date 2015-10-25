@@ -4,57 +4,57 @@ using LeagueSharp;
 using LeagueSharp.Common;
 using Color = System.Drawing.Color;
 using ItemData = LeagueSharp.Common.Data.ItemData;
-using SharpDX;
 
 namespace HoolaRiven
 {
     public class Program
     {
+        static Menu Menu;
+        static Orbwalking.Orbwalker Orbwalker;
+        static Obj_AI_Hero Player = ObjectManager.Player;
+        static string IsFirstR = "RivenFengShuiEngine";
+        static string IsSecondR = "rivenizunablade";
+        static SpellSlot Flash = Player.GetSpellSlot("summonerFlash");
+        static Spell Q, Q1, W, E, R;
+        static int QStack = 1;
+        static bool forceQ;
+        static float lastQ;
+        static AttackableUnit QTarget = null;
+        static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
+        static bool DrawCB { get { return Menu.Item("DrawCB").GetValue<bool>(); } }
+        static bool KillstealW { get { return Menu.Item("killstealw").GetValue<bool>(); } }
+        static bool KillstealR { get { return Menu.Item("killstealr").GetValue<bool>(); } }
+        static bool DrawAlwaysR { get { return Menu.Item("DrawAlwaysR").GetValue<bool>(); } }
+        static bool DrawUseHoola { get { return Menu.Item("DrawUseHoola").GetValue<bool>(); } }
+        static bool DrawFH { get { return Menu.Item("DrawFH").GetValue<bool>(); } }
+        static bool DrawHS { get { return Menu.Item("DrawHS").GetValue<bool>(); } }
+        static bool DrawBT { get { return Menu.Item("DrawBT").GetValue<bool>(); } }
+        static bool UseHoola { get { return Menu.Item("UseHoola").GetValue<KeyBind>().Active; } }
+        static bool AlwaysR { get { return Menu.Item("AlwaysR").GetValue<KeyBind>().Active; } }
+        static bool AutoShield { get { return Menu.Item("AutoShield").GetValue<bool>(); } }
+        static bool Shield { get { return Menu.Item("Shield").GetValue<bool>(); } }
+        static bool KeepQ { get { return Menu.Item("KeepQ").GetValue<bool>(); } }
+        static int QD { get { return Menu.Item("QD").GetValue<Slider>().Value; } }
+        static int QLD { get { return Menu.Item("QLD").GetValue<Slider>().Value; } }
+        static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
+        static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
+        static bool RMaxDam { get { return Menu.Item("RMaxDam").GetValue<bool>(); } }
+        static bool RKillable { get { return Menu.Item("RKillable").GetValue<bool>(); } }
+        static int LaneW { get { return Menu.Item("LaneW").GetValue<Slider>().Value; } }
+        static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
+        static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
+        static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
+        static bool FirstHydra { get { return Menu.Item("FirstHydra").GetValue<bool>(); } }
+        static bool LaneQ { get { return Menu.Item("LaneQ").GetValue<bool>(); } }
+        static bool Youmu { get { return Menu.Item("youmu").GetValue<bool>(); } }
 
-        private static Menu Menu;
-        private static Orbwalking.Orbwalker Orbwalker;
-        private static Obj_AI_Hero Player = ObjectManager.Player;
-        private static string IsFirstR = "RivenFengShuiEngine";
-        private static string IsSecondR = "rivenizunablade";
-        private static SpellSlot Flash = Player.GetSpellSlot("summonerFlash");
-        private static HpBarIndicator Indicator = new HpBarIndicator();
-        private static Spell Q, Q1, W, E, R;
-        private static int QStack = 1;
-        private static bool forceQ;
-        private static float lastQ;
-        private static AttackableUnit QTarget = null;
-        private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
-        private static bool DrawCB { get { return Menu.Item("DrawCB").GetValue<bool>(); } }
-        private static bool KillstealW { get { return Menu.Item("killstealw").GetValue<bool>(); } }
-        private static bool KillstealR { get { return Menu.Item("killstealr").GetValue<bool>(); } }
-        private static bool DrawAlwaysR { get { return Menu.Item("DrawAlwaysR").GetValue<bool>(); } }
-        private static bool DrawUseHoola { get { return Menu.Item("DrawUseHoola").GetValue<bool>(); } }
-        private static bool DrawFH { get { return Menu.Item("DrawFH").GetValue<bool>(); } }
-        private static bool DrawHS { get { return Menu.Item("DrawHS").GetValue<bool>(); } }
-        private static bool DrawBT { get { return Menu.Item("DrawBT").GetValue<bool>(); } }
-        private static bool UseHoola { get { return Menu.Item("UseHoola").GetValue<KeyBind>().Active; } }
-        private static bool AlwaysR { get { return Menu.Item("AlwaysR").GetValue<KeyBind>().Active; } }
-        private static bool AutoShield { get { return Menu.Item("AutoShield").GetValue<bool>(); } }
-        private static bool Shield { get { return Menu.Item("Shield").GetValue<bool>(); } }
-        private static bool KeepQ { get { return Menu.Item("KeepQ").GetValue<bool>(); } }
-        private static int QD { get { return Menu.Item("QD").GetValue<Slider>().Value; } }
-        private static int QLD { get { return Menu.Item("QLD").GetValue<Slider>().Value; } }
-        private static int AutoW { get { return Menu.Item("AutoW").GetValue<Slider>().Value; } }
-        private static bool ComboW { get { return Menu.Item("ComboW").GetValue<bool>(); } }
-        private static bool RMaxDam { get { return Menu.Item("RMaxDam").GetValue<bool>(); } }
-        private static bool RKillable { get { return Menu.Item("RKillable").GetValue<bool>(); } }
-        private static int LaneW { get { return Menu.Item("LaneW").GetValue<Slider>().Value; } }
-        private static bool LaneE { get { return Menu.Item("LaneE").GetValue<bool>(); } }
-        private static bool WInterrupt { get { return Menu.Item("WInterrupt").GetValue<bool>(); } }
-        private static bool Qstrange { get { return Menu.Item("Qstrange").GetValue<bool>(); } }
-        private static bool FirstHydra { get { return Menu.Item("FirstHydra").GetValue<bool>(); } }
-        private static bool LaneQ { get { return Menu.Item("LaneQ").GetValue<bool>(); } }
-        private static bool Youmu { get { return Menu.Item("youmu").GetValue<bool>(); } }
+        static void Main(string[] args) { CustomEvents.Game.OnGameLoad += OnGameLoad; }
 
-        static void Main(string[] args)
+        static void OnGameLoad(EventArgs args)
         {
+
             if (Player.ChampionName != "Riven") return;
-            Game.PrintChat("Hoola Riven - Loaded Successfully, Good Luck! :)");
+            Game.PrintChat("Hoola Riven - Loaded Successfully, Good Luck! :):)");
             Q = new Spell(SpellSlot.Q);
             W = new Spell(SpellSlot.W);
             E = new Spell(SpellSlot.E, 300);
@@ -65,7 +65,6 @@ namespace HoolaRiven
 
             Game.OnUpdate += Game_OnGameUpdate;
             Drawing.OnDraw += Drawing_OnDraw;
-            Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnProcessSpellCast += OnCast;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Obj_AI_Base.OnPlayAnimation += OnPlay;
@@ -73,7 +72,7 @@ namespace HoolaRiven
             Interrupter2.OnInterruptableTarget += interrupt;
         }
 
-        private static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             var spellName = args.SData.Name;
             if (!sender.IsMe || !Orbwalking.IsAutoAttack(spellName)) return;
@@ -133,39 +132,15 @@ namespace HoolaRiven
                         }
                         else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
                     }
-                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass)
-                    {
-                        if (W.IsReady() && InWRange(target))
-                        {
-                            UseCastItem(300);
-                            UseW(300);
-                            if (Q.IsReady() && QStack != 3) forcecastQ(target);
-                        }
-                        else if (Q.IsReady())
-                        {
-                            UseCastItem(200);
-                            forcecastQ(target);
-                        }
-                        else if (E.IsReady() && !Orbwalking.InAutoAttackRange(target)) E.Cast(target.Position);
-                    }
                     if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && QStack == 2)
                     {
                         UseCastItem(300);
                         forcecastQ(QTarget);
                     }
-                    if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst)
-                    {
-                        if (R.IsReady() && R.Instance.Name == IsSecondR)
-                        {
-                            UseCastItem(500);
-                            Utility.DelayAction.Add(10, () => UseR(500));
-                        }
-                        else if (Q.IsReady()) forcecastQ(target);
-                    }
                 }
             }
         }
-        private static void OnMenuLoad()
+        static void OnMenuLoad()
         {
             Menu = new Menu("Hoola Riven", "hoolariven", true);
             Menu ts = Menu.AddSubMenu(new Menu("Target Selector", "Target Selector"));
@@ -233,7 +208,7 @@ namespace HoolaRiven
             Menu.AddToMainMenu();
         }
 
-        public static void interrupt(Obj_AI_Hero sender, Interrupter2.InterruptableTargetEventArgs args)
+        static void interrupt(Obj_AI_Hero sender, Interrupter2.InterruptableTargetEventArgs args)
         {
             if (sender.IsEnemy && W.IsReady() && sender.IsValidTarget() && !sender.IsZombie && WInterrupt)
             {
@@ -272,12 +247,8 @@ namespace HoolaRiven
             AutoUseW();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo) Combo();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Burst) Burst();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) Jungleclear();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.FastHarass) FastHarass();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Flee) Flee();
-            if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Orbwalker.SetAttack(true);
         }
 
         static void killsteal()
@@ -296,7 +267,7 @@ namespace HoolaRiven
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Rdame(target, target.Health) && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
+                    if (target.Health < Rdame(target, target.Health) && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
                         R.Cast(target.Position);
                 }
             }
@@ -308,7 +279,7 @@ namespace HoolaRiven
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.HealthPercent <= 25 && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
+                    if (target.HealthPercent <= 25 && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
                         R.Cast(target.Position);
                 }
             }
@@ -326,22 +297,6 @@ namespace HoolaRiven
             if (DrawHS) Render.Circle.DrawCircle(Player.Position, 400, Q.IsReady() && W.IsReady() ? Color.FromArgb(120, 0, 170, 255) : Color.IndianRed);
             if (DrawAlwaysR) Drawing.DrawText(heropos.X, heropos.Y + 20, Color.Cyan, AlwaysR ? "Always R On" : "Always R Off");
             if (DrawUseHoola) Drawing.DrawText(heropos.X, heropos.Y + 50, Color.Cyan, UseHoola ? "Hoola Logic On" : "Hoola Logic Off");
-        }
-
-        private static void Drawing_OnEndScene(EventArgs args)
-        {
-            foreach (
-                var enemy in
-                    ObjectManager.Get<Obj_AI_Hero>()
-                        .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
-            {
-                if (Dind)
-                {
-                    Indicator.unit = enemy;
-                    Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
-                }
-
-            }
         }
 
         static void Jungleclear()
@@ -505,7 +460,7 @@ namespace HoolaRiven
 
         static void OnPlay(Obj_AI_Base sender, GameObjectPlayAnimationEventArgs args)
         {
-            if (sender.IsMe && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (sender.IsMe && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit))
             {
                 switch (args.Animation)
                 {
@@ -530,7 +485,7 @@ namespace HoolaRiven
             {
                 forceQ = false;
                 lastQ = Utils.GameTimeTickCount;
-                if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee) Game.Say("/d");
+                if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) Game.Say("/d");
                 QStack += 1;
             }
             if (args.SData.Name.Contains("RivenFeint") && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None)) if (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear && Youmu) CastYoumoo();
@@ -577,13 +532,13 @@ namespace HoolaRiven
         {
             if (Utils.GameTimeTickCount - lastQ >= 3650 && QStack != 1 && !Player.IsRecalling() && KeepQ) saveq();
             if (!Q.IsReady(500) || QStack == 4) QStack = 1;
-            if (forceQ && Orbwalking.CanMove(10) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.Flee))
+            if (forceQ && Orbwalking.CanMove(15) && QTarget != null && QTarget.IsValidTarget(E.Range + Player.BoundingRadius + 70) && (Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None || Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LastHit))
             {
                 if (Q.IsReady()) Q.Cast(QTarget.Position);
             }
         }
 
-        private static void forcecastQ(AttackableUnit target)
+        static void forcecastQ(AttackableUnit target)
         {
             forceQ = true;
             if (target.IsValidTarget() && target != null) QTarget = target;
@@ -619,7 +574,7 @@ namespace HoolaRiven
             }
         }
 
-        private static void FlashW()
+        static void FlashW()
         {
             var target = TargetSelector.GetSelectedTarget();
             if (target != null && target.IsValidTarget() && !target.IsZombie)
@@ -853,21 +808,21 @@ namespace HoolaRiven
                 else if (Player.Level >= 6) { passivenhan = 0.3; }
                 else if (Player.Level >= 3) { passivenhan = 0.25; }
                 else { passivenhan = 0.2; }
-                if (HasItem()) dmg = dmg + Player.GetAutoAttackDamage(target) * 0.7;
-                if (W.IsReady()) dmg = dmg + W.GetDamage(target);
+                if (HasItem()) dmg = dmg + Player.GetAutoAttackDamage2(target) * 0.7;
+                if (W.IsReady()) dmg = dmg + W.GetDamage2(target);
                 if (Q.IsReady())
                 {
                     var qnhan = 4 - QStack;
-                    dmg = dmg + Q.GetDamage(target) * qnhan + Player.GetAutoAttackDamage(target) * qnhan * (1 + passivenhan);
+                    dmg = dmg + Q.GetDamage2(target) * qnhan + Player.GetAutoAttackDamage2(target) * qnhan * (1 + passivenhan);
                 }
-                dmg = dmg + Player.GetAutoAttackDamage(target) * (1 + passivenhan);
+                dmg = dmg + Player.GetAutoAttackDamage2(target) * (1 + passivenhan);
                 return dmg;
             }
             else { return 0; }
         }
 
 
-        static float getComboDamage(Obj_AI_Base enemy)
+        static float getComboDamage2(Obj_AI_Base enemy)
         {
             if (enemy != null)
             {
@@ -901,7 +856,7 @@ namespace HoolaRiven
         static bool IsKillableR(Obj_AI_Hero target)
         {
             if (RKillable && target.IsValidTarget() && (totaldame(target) >= target.Health
-                 && basicdmg(target) <= target.Health) || Player.CountEnemiesInRange(900) >= 2 && (!target.HasBuff2("kindrednodeathbuff") && !target.HasBuff2("Undying Rage") && !target.HasBuff2("JudicatorIntervention")))
+                 && basicdmg(target) <= target.Health) || Player.CountEnemiesInRange(900) >= 2 && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
             {
                 return true;
             }
@@ -920,14 +875,14 @@ namespace HoolaRiven
                 else if (Player.Level >= 6) { passivenhan = 0.3; }
                 else if (Player.Level >= 3) { passivenhan = 0.25; }
                 else { passivenhan = 0.2; }
-                if (HasItem()) dmg = dmg + Player.GetAutoAttackDamage(target) * 0.7;
-                if (W.IsReady()) dmg = dmg + W.GetDamage(target);
+                if (HasItem()) dmg = dmg + Player.GetAutoAttackDamage2(target) * 0.7;
+                if (W.IsReady()) dmg = dmg + W.GetDamage2(target);
                 if (Q.IsReady())
                 {
                     var qnhan = 4 - QStack;
-                    dmg = dmg + Q.GetDamage(target) * qnhan + Player.GetAutoAttackDamage(target) * qnhan * (1 + passivenhan);
+                    dmg = dmg + Q.GetDamage2(target) * qnhan + Player.GetAutoAttackDamage2(target) * qnhan * (1 + passivenhan);
                 }
-                dmg = dmg + Player.GetAutoAttackDamage(target) * (1 + passivenhan);
+                dmg = dmg + Player.GetAutoAttackDamage2(target) * (1 + passivenhan);
                 if (R.IsReady())
                 {
                     var rdmg = Rdame(target, target.Health - dmg * 1.2);
