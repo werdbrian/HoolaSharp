@@ -34,6 +34,11 @@ namespace HoolaLucian
         private static bool LQ { get { return Menu.Item("LQ").GetValue<bool>(); } }
         private static bool LW { get { return Menu.Item("LW").GetValue<bool>(); } }
         private static bool LE { get { return Menu.Item("LE").GetValue<bool>(); } }
+        private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
+        private static bool DEQ { get { return Menu.Item("DEQ").GetValue<bool>(); } }
+        private static bool DQ { get { return Menu.Item("DQ").GetValue<bool>(); } }
+        private static bool DW { get { return Menu.Item("DW").GetValue<bool>(); } }
+        private static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
         private static int MinMana { get { return Menu.Item("MinMana").GetValue<Slider>().Value; } }
         static bool ForceR { get { return Menu.Item("ForceR").GetValue<KeyBind>().Active; } }
@@ -64,6 +69,7 @@ namespace HoolaLucian
             Game.OnUpdate += Game_OnUpdate;
             Drawing.OnEndScene += Drawing_OnEndScene;
             Obj_AI_Base.OnDoCast += OnDoCast;
+            Drawing.OnDraw += OnDraw;
             Obj_AI_Base.OnDoCast += OnDoCastLC;
         }
         private static void OnMenuLoad()
@@ -113,6 +119,14 @@ namespace HoolaLucian
             Auto.AddItem(new MenuItem("AutoQ", "Auto Extended Q (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
             Auto.AddItem(new MenuItem("MinMana", "Min Mana (%)").SetValue(new Slider(80)));
             Menu.AddSubMenu(Auto);
+
+            var Draw = new Menu("Draw", "Draw");
+            Draw.AddItem(new MenuItem("Dind", "Draw Damage Incidator").SetValue(true));
+            Draw.AddItem(new MenuItem("DEQ", "Draw Extended Q").SetValue(true));
+            Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(true));
+            Draw.AddItem(new MenuItem("DW", "Draw W").SetValue(true));
+            Draw.AddItem(new MenuItem("DE", "Draw E").SetValue(true));
+            Menu.AddSubMenu(Draw);
 
             var killsteal = new Menu("killsteal", "Killsteal");
             killsteal.AddItem(new MenuItem("KillstealQ", "Killsteal Q").SetValue(true));
@@ -204,7 +218,7 @@ namespace HoolaLucian
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    if (E.IsReady() && !AAPassive && HE) E.Cast(Game.CursorPos);
+                    if (E.IsReady() && !AAPassive && HE) E.Cast(Player.Position.Extend(Game.CursorPos, 100));
                     if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !HE)) && HQ && !AAPassive) Q.Cast(target);
                     if ((!E.IsReady() || (E.IsReady() && !HE)) && (!Q.IsReady() || (Q.IsReady() && !HQ)) && HW && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
@@ -270,8 +284,7 @@ namespace HoolaLucian
         }
         static void AutoUseQ()
         {
-            if (Player.ManaPercent <= MinMana) return;
-            if (Q.IsReady() && AutoQ)
+            if (Q.IsReady() && AutoQ && Player.ManaPercent > MinMana)
             {
                 var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
                 if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
@@ -302,10 +315,11 @@ namespace HoolaLucian
             if (!R.IsReady(10000) && rstate) rstate = false;
             W.Collision = Menu.Item("Nocolision").GetValue<bool>();
             AutoUseQ();
-            LaneClear();
+
             if (ForceR) UseRTarget();
             killsteal();
             if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) LaneClear();
         }
         static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
         {
@@ -342,16 +356,26 @@ namespace HoolaLucian
             return 0;
         }
 
+        static void OnDraw(EventArgs args)
+        {
+            if (DEQ) Render.Circle.DrawCircle(Player.Position, Q1.Range, Q.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if (DQ) Render.Circle.DrawCircle(Player.Position, Q.Range, Q.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if (DW) Render.Circle.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if (DE) Render.Circle.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.LimeGreen : Color.IndianRed);
+        }
         static void Drawing_OnEndScene(EventArgs args)
         {
-            foreach (
-                var enemy in
-                    ObjectManager.Get<Obj_AI_Hero>()
-                        .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
+            if (Dind)
             {
-                Indicator.unit = enemy;
-                Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+                foreach (
+                    var enemy in
+                        ObjectManager.Get<Obj_AI_Hero>()
+                            .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
+                {
+                    Indicator.unit = enemy;
+                    Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
 
+                }
             }
         }
     }
