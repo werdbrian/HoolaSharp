@@ -270,7 +270,8 @@ namespace HoolaLucian
         }
         static void AutoUseQ()
         {
-            if (Q.IsReady() && AutoQ && Player.ManaPercent > MinMana)
+            if (Player.ManaPercent <= MinMana) return;
+            if (Q.IsReady() && AutoQ)
             {
                 var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
                 if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
