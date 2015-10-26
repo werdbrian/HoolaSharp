@@ -196,7 +196,7 @@ namespace HoolaLucian
                     var Minions = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.Health);
                     if (Minions[0].IsValid && Minions.Count != 0)
                     {
-                        if (E.IsReady() && !AAPassive && LE) E.Cast(Game.CursorPos);
+                        if (E.IsReady() && !AAPassive && LE) E.Cast(Player.Position.Extend(Game.CursorPos, 30));
                         if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !LE)) && LQ && !AAPassive) Q.Cast(Minions[0]);
                         if ((!E.IsReady() || (E.IsReady() && !LE)) && (!Q.IsReady() || (Q.IsReady() && !LQ)) && LW && W.IsReady() && !AAPassive) W.Cast(Minions[0].Position);
                     }
@@ -218,7 +218,7 @@ namespace HoolaLucian
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    if (E.IsReady() && !AAPassive && HE) E.Cast(Player.Position.Extend(Game.CursorPos, 100));
+                    if (E.IsReady() && !AAPassive && HE) E.Cast(Player.Position.Extend(Game.CursorPos, 30));
                     if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !HE)) && HQ && !AAPassive) Q.Cast(target);
                     if ((!E.IsReady() || (E.IsReady() && !HE)) && (!Q.IsReady() || (Q.IsReady() && !HQ)) && HW && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
@@ -230,7 +230,7 @@ namespace HoolaLucian
                     var Mobs = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
                     if (Mobs[0].IsValid && Mobs.Count != 0)
                     {
-                        if (E.IsReady() && !AAPassive && JE) E.Cast(Game.CursorPos);
+                        if (E.IsReady() && !AAPassive && JE) E.Cast(Player.Position.Extend(Game.CursorPos, 30));
                         if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !JE)) && JQ && !AAPassive) Q.Cast(Mobs[0]);
                         if ((!E.IsReady() || (E.IsReady() && !JE)) && (!Q.IsReady() || (Q.IsReady() && !JQ)) && JW && W.IsReady() && !AAPassive) W.Cast(Mobs[0].Position);
                     }
