@@ -562,7 +562,7 @@ namespace HoolaLucian
                     new MenuItem("ExtraWindup", "Extra windup time").SetValue(new Slider(35)));
                 _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetValue(new Slider(0, 0, 200)));
                 _config.AddItem(
-                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(20, 20, 100)));
+                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(40, 20, 100)));
 
 
                 /*Load the menu*/
