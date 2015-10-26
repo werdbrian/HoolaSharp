@@ -214,7 +214,7 @@ namespace HoolaRiven
                         if (R.IsReady() && R.Instance.Name == IsSecondR)
                         {
                             UseCastItem(500);
-                            UseR(500);
+                            Utility.DelayAction.Add(50, () => UseR(1000));
                         }
                         else if (Q.IsReady())
                         {
@@ -661,7 +661,7 @@ namespace HoolaRiven
             var target = TargetSelector.GetSelectedTarget();
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
-                W.Cast();
+                UseW(300);
                 Utility.DelayAction.Add(10, () => Player.Spellbook.CastSpell(Flash, target.Position));
             }
         }
