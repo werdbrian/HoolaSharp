@@ -41,6 +41,7 @@ namespace HoolaLucian
         private static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
         static bool AutoQ { get { return Menu.Item("AutoQ").GetValue<KeyBind>().Active; } }
         private static int MinMana { get { return Menu.Item("MinMana").GetValue<Slider>().Value; } }
+        private static int Humanizer { get { return Menu.Item("Humanizer").GetValue<Slider>().Value; } }
         static bool ForceR { get { return Menu.Item("ForceR").GetValue<KeyBind>().Active; } }
 
         static void Main()
@@ -91,6 +92,7 @@ namespace HoolaLucian
             Menu.AddSubMenu(Combo);
 
             var Misc = new Menu("Misc", "Misc");
+            Misc.AddItem(new MenuItem("Humanizer", "Humanizer Delay").SetValue(new Slider(5, 5, 300)));
             Misc.AddItem(new MenuItem("Nocolision", "Nocolision W").SetValue(true));
             Menu.AddSubMenu(Misc);
 
@@ -145,18 +147,18 @@ namespace HoolaLucian
                 var target = (Obj_AI_Base)args.Target;
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid)
                 {
-                    Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                    Utility.DelayAction.Add(Humanizer, () => OnDoCastDelayed(args));
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                    Utility.DelayAction.Add(Humanizer, () => OnDoCastDelayed(args));
                 }
             }
             if (args.Target is Obj_AI_Minion)
             {
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && args.Target.IsValid)
                 {
-                    Utility.DelayAction.Add(5, () => OnDoCastDelayed(args));
+                    Utility.DelayAction.Add(Humanizer, () => OnDoCastDelayed(args));
                 }
             }
         }
@@ -169,7 +171,7 @@ namespace HoolaLucian
             {
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && args.Target.IsValid)
                 {
-                    Utility.DelayAction.Add(5, () => OnDoCastDelayedLC(args));
+                    Utility.DelayAction.Add(Humanizer, () => OnDoCastDelayedLC(args));
                 }
             }
         }
