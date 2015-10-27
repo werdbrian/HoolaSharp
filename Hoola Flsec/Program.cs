@@ -19,7 +19,7 @@ namespace HoolaFlsec
         private static Vector3 insecPos;
         public static Vector2 InsecLinePos;
         public static bool isNullInsecPos = true;
-        private static bool ToAlly { get { return Menu.Item("ToAlly").GetValue<bool>(); } }
+        private static bool ToAlly { get { return Menu.Item("ToAlly").GetValue<KeyBind>().Active; } }
         private static bool ToDraw { get { return Menu.Item("ToDraw").GetValue<bool>(); } }
         static bool ToWhere { get { return Menu.Item("ToWhere").GetValue<KeyBind>().Active; } }
 
@@ -38,7 +38,7 @@ namespace HoolaFlsec
             Obj_AI_Base.OnProcessSpellCast += OnCast;
 
         }
-        
+
         private static List<Obj_AI_Hero> GetAllyHeroes(Obj_AI_Hero position, int range)
         {
             var temp = new List<Obj_AI_Hero>();
@@ -64,10 +64,10 @@ namespace HoolaFlsec
             return result;
         }
 
-        private static void OnCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args )
+        private static void OnCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
         {
             if (!sender.IsMe || !args.SData.Name.Contains("BlindMonkRKick")) return;
-                var target = (Obj_AI_Hero) args.Target;
+            var target = (Obj_AI_Hero)args.Target;
             if (ToAlly && target.IsValid)
             {
                 var turrets = (from tower in ObjectManager.Get<Obj_Turret>()
@@ -129,7 +129,7 @@ namespace HoolaFlsec
         }
         private static void OnDraw(EventArgs args)
         {
-            var target = TargetSelector.GetTarget(1400,TargetSelector.DamageType.Physical);
+            var target = TargetSelector.GetTarget(1400, TargetSelector.DamageType.Physical);
             if (ToAlly && target.IsValid)
             {
                 var turrets = (from tower in ObjectManager.Get<Obj_Turret>()
@@ -168,14 +168,14 @@ namespace HoolaFlsec
             Menu = new Menu("Hoola Flsec", "hoolaflsec", true);
 
             var FlashInSec = new Menu("FlashInSec", "FlashInSec");
-            FlashInSec.AddItem(new MenuItem("ToAlly", "Flash Insec On").SetValue(true));
+            FlashInSec.AddItem(new MenuItem("ToAlly", "Flash Insec On (Toggle)").SetValue(new KeyBind('G', KeyBindType.Toggle)));
             FlashInSec.AddItem(new MenuItem("ToDraw", "Draw Flash Position").SetValue(true));
             FlashInSec.AddItem(new MenuItem("ToWhere", "Priorize to (On = Tower, Off = Ally)").SetValue(new KeyBind('T', KeyBindType.Toggle)));
             Menu.AddSubMenu(FlashInSec);
 
             Menu.AddToMainMenu();
         }
-        
-        
+
+
     }
 }
