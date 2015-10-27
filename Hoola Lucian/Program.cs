@@ -28,6 +28,7 @@ namespace HoolaLucian
         private static bool HQ { get { return Menu.Item("HQ").GetValue<bool>(); } }
         private static bool HW { get { return Menu.Item("HW").GetValue<bool>(); } }
         private static int HE { get { return Menu.Item("HE").GetValue<StringList>().SelectedIndex; } }
+        private static int HMinMana { get { return Menu.Item("HMinMana").GetValue<Slider>().Value; } }
         private static bool JQ { get { return Menu.Item("JQ").GetValue<bool>(); } }
         private static bool JW { get { return Menu.Item("JW").GetValue<bool>(); } }
         private static bool JE { get { return Menu.Item("JE").GetValue<bool>(); } }
@@ -35,6 +36,7 @@ namespace HoolaLucian
         private static bool LQ { get { return Menu.Item("LQ").GetValue<bool>(); } }
         private static bool LW { get { return Menu.Item("LW").GetValue<bool>(); } }
         private static bool LE { get { return Menu.Item("LE").GetValue<bool>(); } }
+        private static int LMinMana { get { return Menu.Item("LMinMana").GetValue<Slider>().Value; } }
         private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
         private static bool DEQ { get { return Menu.Item("DEQ").GetValue<bool>(); } }
         private static bool DQ { get { return Menu.Item("DQ").GetValue<bool>(); } }
@@ -100,6 +102,7 @@ namespace HoolaLucian
 
             var Harass = new Menu("Harass", "Harass");
             Harass.AddItem(new MenuItem("HEXQ", "Use Extended Q").SetValue(true));
+            Harass.AddItem(new MenuItem("HMinMana", "Extended Q Min Mana (%)").SetValue(new Slider(80)));
             Harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
             Harass.AddItem(new MenuItem("HW", "Use W").SetValue(true));
             Harass.AddItem(new MenuItem("HE", "Use E Mode").SetValue(new StringList(new[] { "Side", "Cursor", "Enemy", "Never" })));
@@ -110,6 +113,7 @@ namespace HoolaLucian
             LC.AddItem(new MenuItem("LQ", "Use Q").SetValue(true));
             LC.AddItem(new MenuItem("LW", "Use W").SetValue(true));
             LC.AddItem(new MenuItem("LE", "Use E").SetValue(true));
+            LC.AddItem(new MenuItem("LMinMana", "Min Mana (%)").SetValue(new Slider(80)));
             Menu.AddSubMenu(LC);
 
             var JC = new Menu("JungleClear", "JungleClear");
@@ -242,7 +246,7 @@ namespace HoolaLucian
             }
             if (args.Target is Obj_AI_Minion && args.Target.IsValid)
             {
-                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear && Player.ManaPercent > LMinMana)
                 {
                     var Mobs = MinionManager.GetMinions(Orbwalking.GetRealAutoAttackRange(Player), MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
                     if (Mobs[0].IsValid && Mobs.Count != 0)
@@ -257,6 +261,8 @@ namespace HoolaLucian
 
         static void Harass()
         {
+            if (Player.ManaPercent < HMinMana) return;
+
             if (Q.IsReady() && HEXQ)
             {
                 var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
@@ -279,25 +285,27 @@ namespace HoolaLucian
         }
         static void LaneClear()
         {
-            if (Q.IsReady() && LHQ)
-            {
-                var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
-                if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
-                {
-                    var qpred = Q.GetPrediction(t1, true);
-                    var distance = Player.Distance(qpred.CastPosition);
-                    var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
+            if (Player.ManaPercent < LMinMana)
 
-                    foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
+                if (Q.IsReady() && LHQ)
+                {
+                    var t1 = TargetSelector.GetTarget(Q1.Range, TargetSelector.DamageType.Physical);
+                    if (t1.IsValidTarget(Q1.Range) && Player.Distance(t1.ServerPosition) > Q.Range + 100)
                     {
-                        if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
+                        var qpred = Q.GetPrediction(t1, true);
+                        var distance = Player.Distance(qpred.CastPosition);
+                        var minions = MinionManager.GetMinions(Player.ServerPosition, Q.Range, MinionTypes.All, MinionTeam.Enemy, MinionOrderTypes.MaxHealth);
+
+                        foreach (var minion in minions.Where(minion => minion.IsValidTarget(Q.Range)))
                         {
-                            Q.Cast(minion);
-                            return;
+                            if (qpred.CastPosition.Distance(Player.Position.Extend(minion.Position, distance)) < 25)
+                            {
+                                Q.Cast(minion);
+                                return;
+                            }
                         }
                     }
                 }
-            }
         }
         static void AutoUseQ()
         {
