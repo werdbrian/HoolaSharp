@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms.VisualStyles;
 using LeagueSharp;
@@ -23,10 +24,10 @@ namespace HoolaLucian
         private static bool KillstealQ { get { return Menu.Item("KillstealQ").GetValue<bool>(); } }
         private static bool CQ { get { return Menu.Item("CQ").GetValue<bool>(); } }
         private static bool CW { get { return Menu.Item("CW").GetValue<bool>(); } }
-        private static bool CE { get { return Menu.Item("CE").GetValue<bool>(); } }
+        private static int CE { get { return Menu.Item("CE").GetValue<StringList>().SelectedIndex; } }
         private static bool HQ { get { return Menu.Item("HQ").GetValue<bool>(); } }
         private static bool HW { get { return Menu.Item("HW").GetValue<bool>(); } }
-        private static bool HE { get { return Menu.Item("HE").GetValue<bool>(); } }
+        private static int HE { get { return Menu.Item("HE").GetValue<StringList>().SelectedIndex; } }
         private static bool JQ { get { return Menu.Item("JQ").GetValue<bool>(); } }
         private static bool JW { get { return Menu.Item("JW").GetValue<bool>(); } }
         private static bool JE { get { return Menu.Item("JE").GetValue<bool>(); } }
@@ -87,7 +88,7 @@ namespace HoolaLucian
             var Combo = new Menu("Combo", "Combo");
             Combo.AddItem(new MenuItem("CQ", "Use Q").SetValue(true));
             Combo.AddItem(new MenuItem("CW", "Use W").SetValue(true));
-            Combo.AddItem(new MenuItem("CE", "Use E").SetValue(true));
+            Combo.AddItem(new MenuItem("CE", "Use E Mode").SetValue(new StringList(new[] { "Side", "Cursor", "Enemy", "Never" })));
             Combo.AddItem(new MenuItem("ForceR", "Force R On Target Selector").SetValue(new KeyBind('T', KeyBindType.Press)));
             Menu.AddSubMenu(Combo);
 
@@ -101,7 +102,7 @@ namespace HoolaLucian
             Harass.AddItem(new MenuItem("HEXQ", "Use Extended Q").SetValue(true));
             Harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
             Harass.AddItem(new MenuItem("HW", "Use W").SetValue(true));
-            Harass.AddItem(new MenuItem("HE", "Use E").SetValue(true));
+            Harass.AddItem(new MenuItem("HE", "Use E Mode").SetValue(new StringList(new[] { "Side", "Cursor", "Enemy", "Never" })));
             Menu.AddSubMenu(Harass);
 
             var LC = new Menu("LaneClear", "LaneClear");
@@ -205,6 +206,16 @@ namespace HoolaLucian
                 }
             }
         }
+        public static Vector2 Deviation(Vector2 point1, Vector2 point2, double angle)
+        {
+            angle *= Math.PI / 180.0;
+            Vector2 temp = Vector2.Subtract(point2, point1);
+            Vector2 result = new Vector2(0);
+            result.X = (float)(temp.X * Math.Cos(angle) - temp.Y * Math.Sin(angle)) / 9;
+            result.Y = (float)(temp.X * Math.Sin(angle) + temp.Y * Math.Cos(angle)) / 9;
+            result = Vector2.Add(result, point1);
+            return result;
+        }
         private static void OnDoCastDelayed(GameObjectProcessSpellCastEventArgs args)
         {
             AAPassive = false;
@@ -214,15 +225,19 @@ namespace HoolaLucian
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && target.IsValid)
                 {
                     if (ItemData.Youmuus_Ghostblade.GetItem().IsReady()) ItemData.Youmuus_Ghostblade.GetItem().Cast();
-                    if (E.IsReady() && !AAPassive && CE) E.Cast(Game.CursorPos);
-                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !CE)) && CQ && !AAPassive) Q.Cast(target);
-                    if ((!E.IsReady() || (E.IsReady() && !CE)) && (!Q.IsReady() || (Q.IsReady() && !CQ)) && CW && W.IsReady() && !AAPassive) W.Cast(target.Position);
+                    if (E.IsReady() && !AAPassive && CE == 0) E.Cast((Deviation(Player.Position.To2D(), target.Position.To2D(), 65).To3D()));
+                    if (E.IsReady() && !AAPassive && CE == 1) E.Cast(Game.CursorPos);
+                    if (E.IsReady() && !AAPassive && CE == 2) E.Cast(Player.Position.Extend(target.Position, 50));
+                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && CE == 3)) && CQ && !AAPassive) Q.Cast(target);
+                    if ((!E.IsReady() || (E.IsReady() && CE == 3)) && (!Q.IsReady() || (Q.IsReady() && !CQ)) && CW && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
                 if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed && target.IsValid)
                 {
-                    if (E.IsReady() && !AAPassive && HE) E.Cast(Player.Position.Extend(Game.CursorPos, 70));
-                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && !HE)) && HQ && !AAPassive) Q.Cast(target);
-                    if ((!E.IsReady() || (E.IsReady() && !HE)) && (!Q.IsReady() || (Q.IsReady() && !HQ)) && HW && W.IsReady() && !AAPassive) W.Cast(target.Position);
+                    if (E.IsReady() && !AAPassive && HE == 0) E.Cast((Deviation(Player.Position.To2D(), target.Position.To2D(), 65).To3D()));
+                    if (E.IsReady() && !AAPassive && HE == 1) E.Cast(Player.Position.Extend(Game.CursorPos, 50));
+                    if (E.IsReady() && !AAPassive && HE == 2) E.Cast(Player.Position.Extend(target.Position, 50));
+                    if (Q.IsReady() && (!E.IsReady() || (E.IsReady() && HE == 3)) && HQ && !AAPassive) Q.Cast(target);
+                    if ((!E.IsReady() || (E.IsReady() && HE == 3)) && (!Q.IsReady() || (Q.IsReady() && !HQ)) && HW && W.IsReady() && !AAPassive) W.Cast(target.Position);
                 }
             }
             if (args.Target is Obj_AI_Minion && args.Target.IsValid)
