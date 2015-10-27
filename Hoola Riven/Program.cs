@@ -368,7 +368,7 @@ namespace HoolaRiven
                 var targets = HeroManager.Enemies.Where(x => x.IsValidTarget(R.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.HealthPercent <= 25 && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
+                    if (target.Health / target.MaxHealth <= 0.25 && (!target.HasBuff("kindrednodeathbuff") && !target.HasBuff("Undying Rage") && !target.HasBuff("JudicatorIntervention")))
                         R.Cast(target.Position);
                 }
             }
