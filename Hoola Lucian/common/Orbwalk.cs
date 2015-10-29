@@ -283,7 +283,7 @@ namespace HoolaLucian
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
-        public static bool CanMove(float extraWindup)
+        public static bool CanMove(float extraMoveup)
         {
             if (!Move)
             {
@@ -294,14 +294,8 @@ namespace HoolaLucian
             {
                 return true;
             }
-
-            var localExtraWindup = 0;
-            if(_championName == "Rengar" && (Player.HasBuff("rengarqbase") || Player.HasBuff("rengarqemp")))
-            {
-                localExtraWindup = 200;
-            }
-
-            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 970 + extraWindup + localExtraWindup);
+            
+            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraMoveup);
         }
         
 
@@ -399,6 +393,7 @@ namespace HoolaLucian
 
                     if (!DisableNextAttack)
                     {
+                        if (!Player.IssueOrder(GameObjectOrder.AttackUnit, target)) ResetAutoAttackTimer();
                         Player.IssueOrder(GameObjectOrder.AttackUnit, target);
                         _lastTarget = target;
                         _missileLaunched = false;
@@ -554,10 +549,12 @@ namespace HoolaLucian
                 misc.AddItem(new MenuItem("AttackPetsnTraps", "Auto attack pets & traps").SetShared().SetValue(true));
                 misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
                 _config.AddSubMenu(misc);
-                
+
+                /* Missile check */
+                _config.AddItem(new MenuItem("MissileCheck", "Use Missile Check").SetValue(false));
                 /* Delay sliders */
                 _config.AddItem(
-                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(300, 0, 100)));
+                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0, 0, 100)));
 
 
                 /*Load the menu*/
@@ -584,11 +581,7 @@ namespace HoolaLucian
             {
                 return Orbwalking.InAutoAttackRange(target);
             }
-
-            private int FarmDelay
-            {
-                get { return _config.Item("FarmDelay").GetValue<Slider>().Value; }
-            }
+            
 
             public static bool MissileCheck
             {
@@ -670,7 +663,7 @@ namespace HoolaLucian
                                 minion.IsValidTarget() && minion.Team != GameObjectTeam.Neutral &&
                                 InAutoAttackRange(minion) && MinionManager.IsMinion(minion, false) &&
                                 HealthPrediction.LaneClearHealthPrediction(
-                                    minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay) <=
+                                    minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod)) <=
                                 Player.GetAutoAttackDamage2(minion));
             }
 
@@ -704,9 +697,9 @@ namespace HoolaLucian
 
                     foreach (var minion in MinionList)
                     {
-                        var t = (int)(Player.AttackCastDelay * 1000) - 100 + Game.Ping / 2 +
+                        var t = (int)(Player.AttackCastDelay * 1000) - 100 +
                                 1000 * (int) Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)GetMyProjectileSpeed();
-                        var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
+                        var predHealth = HealthPrediction.GetHealthPrediction(minion, t);
 
                         if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>()) ))
                         {
@@ -790,7 +783,7 @@ namespace HoolaLucian
                         if (_prevMinion.IsValidTarget() && InAutoAttackRange(_prevMinion))
                         {
                             var predHealth = HealthPrediction.LaneClearHealthPrediction(
-                                _prevMinion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay);
+                                _prevMinion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod));
                             if (predHealth >= 2 * Player.GetAutoAttackDamage2(_prevMinion) ||
                                 Math.Abs(predHealth - _prevMinion.Health) < float.Epsilon)
                             {
@@ -806,7 +799,7 @@ namespace HoolaLucian
                                           minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
                                       HealthPrediction.LaneClearHealthPrediction(
-                                          minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), FarmDelay)
+                                          minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod))
                                   where
                                       predHealth >= 2 * Player.GetAutoAttackDamage2(minion) ||
                                       Math.Abs(predHealth - minion.Health) < float.Epsilon
