@@ -554,7 +554,7 @@ namespace HoolaRiven
             {
                 forceQ = false;
                 lastQ = Utils.GameTimeTickCount;
-                if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) Game.Say("/d");
+                if (Qstrange && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.None) Game.SendEmote(Emote.Dance);
                 QStack += 1;
             }
             if (args.SData.Name.Contains("RivenFeint"))
@@ -580,7 +580,7 @@ namespace HoolaRiven
 
         static void Reset()
         {
-            Game.Say("/d");
+            Game.SendEmote(Emote.Dance);
             Orbwalking.LastAATick = 0;
             Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, Player.Distance(Game.CursorPos) + 10));
         }
