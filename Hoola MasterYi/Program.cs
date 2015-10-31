@@ -42,6 +42,7 @@ namespace HoolaMasterYi
         private static bool JI { get { return Menu.Item("JI").GetValue<bool>(); } }
         private static bool AutoY { get { return Menu.Item("AutoY").GetValue<bool>(); } }
         private static bool DQ { get { return Menu.Item("DQ").GetValue<bool>(); } }
+        private static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
         static void Main()
         {
             CustomEvents.Game.OnGameLoad += OnGameLoad;
@@ -303,6 +304,7 @@ namespace HoolaMasterYi
             Menu.AddSubMenu(killsteal);
 
             var Draw = new Menu("Draw", "Draw");
+            Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
             Draw.AddItem(new MenuItem("DQ", "Draw Q").SetValue(true));
             Menu.AddSubMenu(Draw);
 
@@ -401,8 +403,12 @@ namespace HoolaMasterYi
                     ObjectManager.Get<Obj_AI_Hero>()
                         .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
             {
-                Indicator.unit = enemy;
-                Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+                if (Dind)
+                {
+                    Indicator.unit = enemy;
+                    Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+                }
+                
 
             }
         }
