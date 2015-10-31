@@ -31,7 +31,7 @@ using LeagueSharp;
 using LeagueSharp.Common;
 #endregion
 
-namespace HoolaRiven
+namespace HoolaMasterYi
 {
 
     /// <summary>
@@ -62,16 +62,13 @@ namespace HoolaRiven
         public delegate void OnTargetChangeH(AttackableUnit oldTarget, AttackableUnit newTarget);
         public enum OrbwalkingMode
         {
-            Flee,
             LastHit,
             Mixed,
             LaneClear,
             Combo,
-            Burst,
-            FastHarass,
             None
         }
-        
+
 
         //Spells that are not attacks even if they have the "attack" word in their name.
         private static readonly string[] NoAttacks =
@@ -128,7 +125,7 @@ namespace HoolaRiven
         ///     This event is fired when a unit is about to auto-attack another unit.
         /// </summary>
         public static event OnAttackEvenH OnAttack;
-        
+
         /// <summary>
         ///     Gets called on target changes
         /// </summary>
@@ -158,7 +155,7 @@ namespace HoolaRiven
                 OnAttack(unit, target);
             }
         }
-        
+
 
         private static void FireOnTargetSwitch(AttackableUnit newTarget)
         {
@@ -222,7 +219,7 @@ namespace HoolaRiven
                     (target is Obj_AI_Base) ? ((Obj_AI_Base)target).ServerPosition.To2D() : target.Position.To2D(),
                     Player.ServerPosition.To2D()) <= myRange * myRange;
         }
-        
+
 
         /// <summary>
         ///     Returns if the player's auto-attack is ready.
@@ -241,7 +238,7 @@ namespace HoolaRiven
             {
                 return false;
             }
-            
+
             return (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
         }
 
@@ -365,40 +362,33 @@ namespace HoolaRiven
                 ResetAutoAttackTimer();
             }
         }
-        
+
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
-            try
+            var spellName = Spell.SData.Name;
+
+            if (!IsAutoAttack(spellName))
             {
-                var spellName = Spell.SData.Name;
+                return;
+            }
 
-                if (!IsAutoAttack(spellName))
+            if (unit.IsMe &&
+                (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
+            {
+                LastAATick = Utils.GameTimeTickCount;
+
+                if (Spell.Target is Obj_AI_Base)
                 {
-                    return;
-                }
-
-                if (unit.IsMe &&
-                    (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
-                {
-                    LastAATick = Utils.GameTimeTickCount;
-
-                    if (Spell.Target is Obj_AI_Base)
+                    var target = (Obj_AI_Base)Spell.Target;
+                    if (target.IsValid)
                     {
-                        var target = (Obj_AI_Base)Spell.Target;
-                        if (target.IsValid)
-                        {
-                            FireOnTargetSwitch(target);
-                            _lastTarget = target;
-                        }
+                        FireOnTargetSwitch(target);
+                        _lastTarget = target;
                     }
                 }
+            }
 
-                FireOnAttack(unit, _lastTarget);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            FireOnAttack(unit, _lastTarget);
         }
 
         public class BeforeAttackEventArgs
@@ -461,15 +451,12 @@ namespace HoolaRiven
                 misc.AddItem(new MenuItem("AttackPetsnTraps", "Auto attack pets & traps").SetShared().SetValue(true));
                 misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
                 _config.AddSubMenu(misc);
-                
+
                 _config.AddItem(
                     new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(50, 0, 100)));
 
 
                 /*Load the menu*/
-                _config.AddItem(
-                    new MenuItem("Flee", "Flee").SetValue(new KeyBind('A', KeyBindType.Press)));
-
                 _config.AddItem(
                     new MenuItem("LastHit", "Last hit").SetValue(new KeyBind('X', KeyBindType.Press)));
 
@@ -482,10 +469,6 @@ namespace HoolaRiven
 
                 _config.AddItem(
                     new MenuItem("Orbwalk", "Combo").SetValue(new KeyBind(32, KeyBindType.Press)));
-                _config.AddItem(
-                    new MenuItem("Burst", "Burst").SetValue(new KeyBind('T', KeyBindType.Press)));
-                _config.AddItem(
-                    new MenuItem("FastHarass", "FastHarass").SetValue(new KeyBind('Y', KeyBindType.Press)));
 
                 Player = ObjectManager.Player;
                 Game.OnUpdate += GameOnOnGameUpdate;
@@ -497,7 +480,7 @@ namespace HoolaRiven
             {
                 return Orbwalking.InAutoAttackRange(target);
             }
-            
+
             public OrbwalkingMode ActiveMode
             {
                 get
@@ -510,16 +493,6 @@ namespace HoolaRiven
                     if (_config.Item("Orbwalk").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.Combo;
-                    }
-
-                    if (_config.Item("Burst").GetValue<KeyBind>().Active)
-                    {
-                        return OrbwalkingMode.Burst;
-                    }
-
-                    if (_config.Item("FastHarass").GetValue<KeyBind>().Active)
-                    {
-                        return OrbwalkingMode.FastHarass;
                     }
 
                     if (_config.Item("LaneClear").GetValue<KeyBind>().Active)
@@ -535,11 +508,6 @@ namespace HoolaRiven
                     if (_config.Item("LastHit").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.LastHit;
-                    }
-
-                    if (_config.Item("Flee").GetValue<KeyBind>().Active)
-                    {
-                        return OrbwalkingMode.Flee;
                     }
 
                     return OrbwalkingMode.None;

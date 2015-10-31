@@ -52,7 +52,6 @@ namespace HoolaLucian
                           String.Equals(buff.DisplayName, buffName, StringComparison.CurrentCultureIgnoreCase))) &&
                         buff.IsValidBuff());
         }
-        public delegate void AfterAttackEvenH(AttackableUnit unit, AttackableUnit target);
 
         public delegate void BeforeAttackEvenH(BeforeAttackEventArgs args);
 
@@ -70,16 +69,6 @@ namespace HoolaLucian
             None
         }
 
-        //Spells that reset the attack timer.
-        private static readonly string[] AttackResets =
-        {
-            "dariusnoxiantacticsonh", "fioraflurry", "garenq",
-            "hecarimrapidslash", "jaxempowertwo", "jaycehypercharge", "leonashieldofdaybreak",
-            "monkeykingdoubleattack", "mordekaisermaceofspades", "nasusq", "nautiluspiercinggaze", "netherblade",
-            "parley", "poppydevastatingblow", "powerfist", "renektonpreexecute", "rengarq", "shyvanadoubleattack",
-            "sivirw", "takedown", "talonnoxiandiplomacy", "trundletrollsmash", "vaynetumble", "vie", "volibearq",
-            "xenzhaocombotarget", "yorickspectral", "reksaiq", "itemtitanichydracleave"
-        };
 
         //Spells that are not attacks even if they have the "attack" word in their name.
         private static readonly string[] NoAttacks =
@@ -103,13 +92,12 @@ namespace HoolaLucian
         private static readonly string[] Attacks =
         {
             "caitlynheadshotmissile", "frostarrow", "garenslash2",
-            "kennenmegaproc", "masteryidoublestrike", "quinnwenhanced", "renektonexecute",
+            "kennenmegaproc", "lucianpassiveattack", "masteryidoublestrike", "quinnwenhanced", "renektonexecute",
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
             "xenzhaothrust3", "viktorqbuff"
         };
 
         // Champs whose auto attacks can't be cancelled
-        private static readonly string[] NoCancelChamps = { "Kalista" };
         public static int LastAATick;
         public static bool Attack = true;
         public static bool DisableNextAttack;
@@ -119,16 +107,12 @@ namespace HoolaLucian
         private static AttackableUnit _lastTarget;
         private static readonly Obj_AI_Hero Player;
         private static float _minDistance = 400;
-        private static bool _missileLaunched;
-        private static string _championName;
         private static readonly Random _random = new Random(DateTime.Now.Millisecond);
 
         static Orbwalking()
         {
             Player = ObjectManager.Player;
-            _championName = Player.ChampionName;
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
-            Obj_AI_Base.OnDoCast += Obj_AI_Base_OnDoCast;
             Spellbook.OnStopCast += SpellbookOnStopCast;
         }
 
@@ -141,11 +125,6 @@ namespace HoolaLucian
         ///     This event is fired when a unit is about to auto-attack another unit.
         /// </summary>
         public static event OnAttackEvenH OnAttack;
-
-        /// <summary>
-        ///     This event is fired after a unit finishes auto-attacking another unit (Only works with player for now).
-        /// </summary>
-        public static event AfterAttackEvenH AfterAttack;
 
         /// <summary>
         ///     Gets called on target changes
@@ -177,13 +156,6 @@ namespace HoolaLucian
             }
         }
 
-        private static void FireAfterAttack(AttackableUnit unit, AttackableUnit target)
-        {
-            if (AfterAttack != null && target.IsValidTarget())
-            {
-                AfterAttack(unit, target);
-            }
-        }
 
         private static void FireOnTargetSwitch(AttackableUnit newTarget)
         {
@@ -199,22 +171,6 @@ namespace HoolaLucian
             {
                 OnNonKillableMinion(minion);
             }
-        }
-
-        /// <summary>
-        ///     Returns true if the spellname resets the attack timer.
-        /// </summary>
-        public static bool IsAutoAttackReset(string name)
-        {
-            return AttackResets.Contains(name.ToLower());
-        }
-
-        /// <summary>
-        ///     Returns true if the unit is melee
-        /// </summary>
-        public static bool IsMelee(this Obj_AI_Base unit)
-        {
-            return unit.CombatType == GameObjectCombatType.Melee;
         }
 
         /// <summary>
@@ -239,19 +195,19 @@ namespace HoolaLucian
             return result;
         }
 
-		/// <summary>
-		///     Returns the auto-attack range of the target.
-		/// </summary>
-		public static float GetAttackRange(Obj_AI_Hero target)
-		{
-			var result = target.AttackRange + target.BoundingRadius;
-			return result;
-		}
+        /// <summary>
+        ///     Returns the auto-attack range of the target.
+        /// </summary>
+        public static float GetAttackRange(Obj_AI_Hero target)
+        {
+            var result = target.AttackRange + target.BoundingRadius;
+            return result;
+        }
 
-		/// <summary>
-		///     Returns true if the target is in auto-attack range.
-		/// </summary>
-		public static bool InAutoAttackRange(AttackableUnit target)
+        /// <summary>
+        ///     Returns true if the target is in auto-attack range.
+        /// </summary>
+        public static bool InAutoAttackRange(AttackableUnit target)
         {
             if (!target.IsValidTarget())
             {
@@ -264,13 +220,6 @@ namespace HoolaLucian
                     Player.ServerPosition.To2D()) <= myRange * myRange;
         }
 
-        /// <summary>
-        ///     Returns player auto-attack missile speed.
-        /// </summary>
-        public static float GetMyProjectileSpeed()
-        {
-            return IsMelee(Player) || _championName == "Azir" || _championName == "Velkoz" || _championName == "Viktor" && Player.HasBuff("ViktorPowerTransferReturn") ? float.MaxValue : Player.BasicAttack.MissileSpeed;
-        }
 
         /// <summary>
         ///     Returns if the player's auto-attack is ready.
@@ -283,21 +232,16 @@ namespace HoolaLucian
         /// <summary>
         ///     Returns true if moving won't cancel the auto-attack.
         /// </summary>
-        public static bool CanMove(float extraMoveup)
+        public static bool CanMove(float extraWindup)
         {
             if (!Move)
             {
                 return false;
             }
 
-            if (_missileLaunched && Orbwalker.MissileCheck)
-            {
-                return true;
-            }
-            
-            return NoCancelChamps.Contains(_championName) || (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraMoveup);
+            return (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 980 + extraWindup);
         }
-        
+
 
         public static void SetMinimumOrbwalkDistance(float d)
         {
@@ -335,7 +279,7 @@ namespace HoolaLucian
 
             var point = position;
 
-            if(Player.Distance(point, true) < 150 * 150)
+            if (Player.Distance(point, true) < 150 * 150)
             {
                 point = playerPosition.Extend(position, (randomizeMinDistance ? (_random.NextFloat(0.6f, 1) + 0.2f) * _minDistance : _minDistance));
             }
@@ -345,26 +289,26 @@ namespace HoolaLucian
             {
                 var movePath = Player.GetPath(point);
 
-                if(movePath.Length > 1)
+                if (movePath.Length > 1)
                 {
                     var v1 = currentPath[1] - currentPath[0];
                     var v2 = movePath[1] - movePath[0];
                     angle = v1.AngleBetween(v2.To2D());
                     var distance = movePath.Last().To2D().Distance(currentPath.Last(), true);
 
-                    if ((angle < 10 && distance < 500*500) || distance < 50*50)
+                    if ((angle < 10 && distance < 500 * 500) || distance < 50 * 50)
                     {
                         return;
                     }
                 }
             }
-            
+
             if (Utils.GameTimeTickCount - LastMoveCommandT < (70 + Math.Min(60, Game.Ping)) && !overrideTimer && angle < 60)
             {
                 return;
             }
 
-            if(angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
+            if (angle >= 60 && Utils.GameTimeTickCount - LastMoveCommandT < 60)
             {
                 return;
             }
@@ -384,31 +328,22 @@ namespace HoolaLucian
             bool useFixedDistance = true,
             bool randomizeMinDistance = true)
         {
-            try
+            if (target.IsValidTarget() && CanAttack() && Attack)
             {
-                if (target.IsValidTarget() && CanAttack() && Attack)
-                {
-                    DisableNextAttack = false;
-                    FireBeforeAttack(target);
+                DisableNextAttack = false;
+                FireBeforeAttack(target);
 
-                    if (!DisableNextAttack)
-                    {
-                        if (!Player.IssueOrder(GameObjectOrder.AttackUnit, target)) ResetAutoAttackTimer();
-                        Player.IssueOrder(GameObjectOrder.AttackUnit, target);
-                        _lastTarget = target;
-                        _missileLaunched = false;
-                        return;
-                    }
-                }
-
-                if (CanMove(extraMoveup) && Move)
+                if (!DisableNextAttack)
                 {
-                    MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
+                    Player.IssueOrder(GameObjectOrder.AttackUnit, target);
+                    _lastTarget = target;
+                    return;
                 }
             }
-            catch (Exception e)
+
+            if (CanMove(extraMoveup) && Move)
             {
-                Console.WriteLine(e.ToString());
+                MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
             }
         }
 
@@ -428,65 +363,32 @@ namespace HoolaLucian
             }
         }
 
-        private static void Obj_AI_Base_OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-            if(sender.IsMe && IsAutoAttack(args.SData.Name))
-            {
-                if(Game.Ping <= 30) //First world problems kappa
-                {
-                    Utility.DelayAction.Add(30, () => Obj_AI_Base_OnDoCast_Delayed(sender, args));
-                    return;
-                }
-
-                Obj_AI_Base_OnDoCast_Delayed(sender, args);
-            }
-        }
-
-        private static void Obj_AI_Base_OnDoCast_Delayed(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-            FireAfterAttack(sender, args.Target as AttackableUnit);
-            _missileLaunched = true;
-        }
-        
         private static void OnProcessSpell(Obj_AI_Base unit, GameObjectProcessSpellCastEventArgs Spell)
         {
-            try
+            var spellName = Spell.SData.Name;
+
+            if (!IsAutoAttack(spellName))
             {
-                var spellName = Spell.SData.Name;
+                return;
+            }
 
-                if (IsAutoAttackReset(spellName) && unit.IsMe)
+            if (unit.IsMe &&
+                (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
+            {
+                LastAATick = Utils.GameTimeTickCount;
+
+                if (Spell.Target is Obj_AI_Base)
                 {
-                    Utility.DelayAction.Add(250, ResetAutoAttackTimer);
-                }
-
-                if (!IsAutoAttack(spellName))
-                {
-                    return;
-                }
-
-                if (unit.IsMe &&
-                    (Spell.Target is Obj_AI_Base || Spell.Target is Obj_BarracksDampener || Spell.Target is Obj_HQ))
-                {
-                    LastAATick = Utils.GameTimeTickCount - Game.Ping / 2;
-                    _missileLaunched = false;
-
-                    if (Spell.Target is Obj_AI_Base)
+                    var target = (Obj_AI_Base)Spell.Target;
+                    if (target.IsValid)
                     {
-                        var target = (Obj_AI_Base)Spell.Target;
-                        if (target.IsValid)
-                        {
-                            FireOnTargetSwitch(target);
-                            _lastTarget = target;
-                        }
+                        FireOnTargetSwitch(target);
+                        _lastTarget = target;
                     }
                 }
+            }
 
-                FireOnAttack(unit, _lastTarget);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            FireOnAttack(unit, _lastTarget);
         }
 
         public class BeforeAttackEventArgs
@@ -550,11 +452,8 @@ namespace HoolaLucian
                 misc.AddItem(new MenuItem("Smallminionsprio", "Jungle clear small first").SetShared().SetValue(false));
                 _config.AddSubMenu(misc);
 
-                /* Missile check */
-                _config.AddItem(new MenuItem("MissileCheck", "Use Missile Check").SetValue(false));
-                /* Delay sliders */
                 _config.AddItem(
-                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(0, 0, 100)));
+                    new MenuItem("ExtraMoveup", "Move delay After AA").SetValue(new Slider(50, 0, 100)));
 
 
                 /*Load the menu*/
@@ -581,12 +480,6 @@ namespace HoolaLucian
             {
                 return Orbwalking.InAutoAttackRange(target);
             }
-            
-
-            public static bool MissileCheck
-            {
-                get { return _config.Item("MissileCheck").GetValue<bool>(); }
-            }
 
             public OrbwalkingMode ActiveMode
             {
@@ -601,7 +494,7 @@ namespace HoolaLucian
                     {
                         return OrbwalkingMode.Combo;
                     }
-                    
+
                     if (_config.Item("LaneClear").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.LaneClear;
@@ -663,8 +556,8 @@ namespace HoolaLucian
                                 minion.IsValidTarget() && minion.Team != GameObjectTeam.Neutral &&
                                 InAutoAttackRange(minion) && MinionManager.IsMinion(minion, false) &&
                                 HealthPrediction.LaneClearHealthPrediction(
-                                    minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod)) <=
-                                Player.GetAutoAttackDamage2(minion));
+                                    minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), 0) <=
+                                Player.GetAutoAttackDamage(minion));
             }
 
             public virtual AttackableUnit GetTarget()
@@ -698,17 +591,17 @@ namespace HoolaLucian
                     foreach (var minion in MinionList)
                     {
                         var t = (int)(Player.AttackCastDelay * 1000) - 100 +
-                                1000 * (int) Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)GetMyProjectileSpeed();
-                        var predHealth = HealthPrediction.GetHealthPrediction(minion, t);
+                                1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / (int)Player.BasicAttack.MissileSpeed;
+                        var predHealth = HealthPrediction.GetHealthPrediction(minion, t, 0);
 
-                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && minion.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>()) ))
+                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
                         {
                             if (predHealth <= 0)
                             {
                                 FireOnNonKillableMinion(minion);
                             }
-                            
-                            if (predHealth > 0 && predHealth <= Player.GetAutoAttackDamage2(minion, true))
+
+                            if (predHealth > 0 && predHealth <= Player.GetAutoAttackDamage(minion, true))
                             {
                                 return minion;
                             }
@@ -760,16 +653,16 @@ namespace HoolaLucian
                 /*Jungle minions*/
                 if (ActiveMode == OrbwalkingMode.LaneClear || ActiveMode == OrbwalkingMode.Mixed)
                 {
-	                var jminions =
-		                ObjectManager.Get<Obj_AI_Minion>()
-			                .Where(
-				                mob =>
-					                mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) &&
-					                mob.CharData.BaseSkinName != "gangplankbarrel");
-       
-				    result = _config.Item("Smallminionsprio").GetValue<bool>() ? jminions.MinOrDefault(mob => mob.MaxHealth) : jminions.MaxOrDefault(mob => mob.MaxHealth);
+                    var jminions =
+                        ObjectManager.Get<Obj_AI_Minion>()
+                            .Where(
+                                mob =>
+                                    mob.IsValidTarget() && mob.Team == GameObjectTeam.Neutral && InAutoAttackRange(mob) &&
+                                    mob.CharData.BaseSkinName != "gangplankbarrel");
 
-					if (result != null)
+                    result = _config.Item("Smallminionsprio").GetValue<bool>() ? jminions.MinOrDefault(mob => mob.MaxHealth) : jminions.MaxOrDefault(mob => mob.MaxHealth);
+
+                    if (result != null)
                     {
                         return result;
                     }
@@ -783,8 +676,8 @@ namespace HoolaLucian
                         if (_prevMinion.IsValidTarget() && InAutoAttackRange(_prevMinion))
                         {
                             var predHealth = HealthPrediction.LaneClearHealthPrediction(
-                                _prevMinion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod));
-                            if (predHealth >= 2 * Player.GetAutoAttackDamage2(_prevMinion) ||
+                                _prevMinion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), 0);
+                            if (predHealth >= 2 * Player.GetAutoAttackDamage(_prevMinion) ||
                                 Math.Abs(predHealth - _prevMinion.Health) < float.Epsilon)
                             {
                                 return _prevMinion;
@@ -799,12 +692,12 @@ namespace HoolaLucian
                                           minion.CharData.BaseSkinName != "gangplankbarrel")
                                   let predHealth =
                                       HealthPrediction.LaneClearHealthPrediction(
-                                          minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod))
+                                          minion, (int)((Player.AttackDelay * 1000) * LaneClearWaitTimeMod), 0)
                                   where
-                                      predHealth >= 2 * Player.GetAutoAttackDamage2(minion) ||
+                                      predHealth >= 2 * Player.GetAutoAttackDamage(minion) ||
                                       Math.Abs(predHealth - minion.Health) < float.Epsilon
                                   select minion).MaxOrDefault(m => !MinionManager.IsMinion(m, true) ? float.MaxValue : m.Health);
-                        
+
                         if (result != null)
                         {
                             _prevMinion = (Obj_AI_Minion)result;
@@ -859,7 +752,7 @@ namespace HoolaLucian
                     {
                         Render.Circle.DrawCircle(
                             target.Position, GetAttackRange(target),
-                            _config.Item("AACircle2").GetValue<Circle>().Color, 
+                            _config.Item("AACircle2").GetValue<Circle>().Color,
                             _config.Item("AALineWidth").GetValue<Slider>().Value);
                     }
                 }

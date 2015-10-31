@@ -29,7 +29,7 @@ using LeagueSharp;
 using LeagueSharp.Common;
 #endregion
 
-namespace HoolaRiven
+namespace HoolaMasterYi
 {
     public delegate double SpellDamageDelegate(Obj_AI_Base source, Obj_AI_Base target, int level);
 
@@ -121,7 +121,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Riven",
-                IsActive = (source, target) => (source.HasBuff("enchantment_slayer_stacks")),
+                IsActive = (source, target) => (source.HasBuff2("enchantment_slayer_stacks")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -158,13 +158,13 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Quinn",
-                IsActive = (source, target) => (!source.HasBuff("quinnpassiveammo")), //
+                IsActive = (source, target) => (!source.HasBuff2("quinnpassiveammo")), //
                 GetDamage =
                     (source, target) =>
                         (float)
                             source.CalcDamage(
                                 target, DamageType.Physical,
-                                (target.HasBuff("quinnw_cosmetic") ? new float[] { 25/35/45/55/65/75/85/95/105/115/125/135/145/155/170/185/200/215 }[source.Level - 1] + 0.5 * source.FlatPhysicalDamageMod : 0)),
+                                (target.HasBuff2("quinnw_cosmetic") ? new float[] { 25/35/45/55/65/75/85/95/105/115/125/135/145/155/170/185/200/215 }[source.Level - 1] + 0.5 * source.FlatPhysicalDamageMod : 0)),
             };
             AttackPassives.Add(p);
             #endregion*/
@@ -173,7 +173,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "MasterYi",
-                IsActive = (source, target) => (source.HasBuff("doublestrike")),
+                IsActive = (source, target) => (source.HasBuff2("doublestrike")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -188,7 +188,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Ashe",
-                IsActive = (source, target) => (target.HasBuff("ashepassiveslow")),
+                IsActive = (source, target) => (target.HasBuff2("ashepassiveslow")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -203,7 +203,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Ashe",
-                IsActive = (source, target) => (source.HasBuff("asheqattack")),
+                IsActive = (source, target) => (source.HasBuff2("asheqattack")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -219,7 +219,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Diana",
-                IsActive = (source, target) => (source.HasBuff("DianaPassiveMarker") && source.HasBuff("dianaarcready")),
+                IsActive = (source, target) => (source.HasBuff2("DianaPassiveMarker") && source.HasBuff2("dianaarcready")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -235,7 +235,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Viktor",
-                IsActive = (source, target) => (source.HasBuff("viktorqbuff")), // viktorpowertransferreturn
+                IsActive = (source, target) => (source.HasBuff2("viktorqbuff")), // viktorpowertransferreturn
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -267,7 +267,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Aatrox",
-                IsActive = (source, target) => (source.HasBuff("AatroxWPower") && source.HasBuff("AatroxWONHPowerBuff")),
+                IsActive = (source, target) => (source.HasBuff2("AatroxWPower") && source.HasBuff2("AatroxWONHPowerBuff")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.W)),
             };
             AttackPassives.Add(p);
@@ -279,7 +279,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Alistar",
-                IsActive = (source, target) => (source.HasBuff("Trample")),
+                IsActive = (source, target) => (source.HasBuff2("Trample")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -295,7 +295,7 @@ namespace HoolaRiven
             p = new PassiveDamage // By Rl244
             {
                 ChampionName = "Caitlyn",
-                IsActive = (source, target) => (source.HasBuff("CaitlynHeadshotReady")),
+                IsActive = (source, target) => (source.HasBuff2("CaitlynHeadshotReady")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -313,7 +313,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Draven",
-                IsActive = (source, target) => (source.HasBuff("dravenspinning")),
+                IsActive = (source, target) => (source.HasBuff2("dravenspinning")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -330,7 +330,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Corki",
-                IsActive = (source, target) => (source.HasBuff("rapidreload")),
+                IsActive = (source, target) => (source.HasBuff2("rapidreload")),
                 GetDamage =
                     (source, target) => ((float)0.1d * (source.BaseAttackDamage + source.FlatPhysicalDamageMod)),
             };
@@ -358,7 +358,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "JarvanIV",
-                IsActive = (source, target) => (!target.HasBuff("jarvanivmartialcadencecheck")),
+                IsActive = (source, target) => (!target.HasBuff2("jarvanivmartialcadencecheck")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -375,7 +375,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Jinx",
-                IsActive = (source, target) => (source.HasBuff("JinxQ")),
+                IsActive = (source, target) => (source.HasBuff2("JinxQ")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -392,7 +392,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Katarina",
-                IsActive = (source, target) => (target.HasBuff("KataQMark1")),
+                IsActive = (source, target) => (target.HasBuff2("KataQMark1")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.Q, 1)),
             };
             AttackPassives.Add(p);
@@ -404,7 +404,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "KogMaw",
-                IsActive = (source, target) => (source.HasBuff("KogMawBioArcaneBarrage")),
+                IsActive = (source, target) => (source.HasBuff2("KogMawBioArcaneBarrage")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.W)),
             };
             AttackPassives.Add(p);
@@ -416,7 +416,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "MissFortune",
-                IsActive = (source, target) => (source.HasBuff("MissFortunePassive")),
+                IsActive = (source, target) => (source.HasBuff2("MissFortunePassive")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -433,7 +433,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Nasus",
-                IsActive = (source, target) => (source.HasBuff("NasusQ")),
+                IsActive = (source, target) => (source.HasBuff2("NasusQ")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.Q)),
             };
             AttackPassives.Add(p);
@@ -445,7 +445,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Orianna",
-                IsActive = (source, target) => (source.HasBuff("orianaspellsword")),
+                IsActive = (source, target) => (source.HasBuff2("orianaspellsword")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -464,7 +464,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Teemo",
-                IsActive = (source, target) => (source.HasBuff("ToxicShot")),
+                IsActive = (source, target) => (source.HasBuff2("ToxicShot")),
                 GetDamage =
                     (source, target) =>
                         ((float)
@@ -481,7 +481,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "TwistedFate",
-                IsActive = (source, target) => (source.HasBuff("bluecardpreattack")),
+                IsActive = (source, target) => (source.HasBuff2("bluecardpreattack")),
                 GetDamage =
                     (source, target) =>
                         (float)source.GetSpellDamage(target, SpellSlot.W) -
@@ -494,7 +494,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "TwistedFate",
-                IsActive = (source, target) => (source.HasBuff("cardmasterstackparticle")),
+                IsActive = (source, target) => (source.HasBuff2("cardmasterstackparticle")),
                 GetDamage = (source, target) => (float)source.GetSpellDamage(target, SpellSlot.E),
             };
             AttackPassives.Add(p);
@@ -506,7 +506,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Varus",
-                IsActive = (source, target) => (source.HasBuff("VarusW")),
+                IsActive = (source, target) => (source.HasBuff2("VarusW")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.W)),
             };
             AttackPassives.Add(p);
@@ -518,7 +518,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Vayne",
-                IsActive = (source, target) => (source.HasBuff("vaynetumblebonus")),
+                IsActive = (source, target) => (source.HasBuff2("vaynetumblebonus")),
                 GetDamage = (source, target) => ((float)source.GetSpellDamage(target, SpellSlot.Q)),
             };
             AttackPassives.Add(p);
@@ -541,7 +541,7 @@ namespace HoolaRiven
             p = new PassiveDamage
             {
                 ChampionName = "Ziggs",
-                IsActive = (source, target) => (source.HasBuff("ziggsshortfuse")),
+                IsActive = (source, target) => (source.HasBuff2("ziggsshortfuse")),
                 GetDamage =
                     (source, target) =>
                         (float)
@@ -5117,7 +5117,7 @@ namespace HoolaRiven
                         DamageType = DamageType.Magical,
                         Damage =
                             (source, target, level) =>
-                                (source.HasBuff("viktoreaug") || source.HasBuff("viktorweaug") || source.HasBuff("viktorqeaug") || source.HasBuff("viktorqweaug")) ?
+                                (source.HasBuff2("viktoreaug") || source.HasBuff2("viktorweaug") || source.HasBuff2("viktorqeaug") || source.HasBuff2("viktorqweaug")) ?
                                 (new double[] { 98, 161, 224, 287, 350 }[level] + 0.98 * source.FlatMagicDamageMod) :
                                 new double[] { 70, 115, 160, 205, 250 }[level] + 0.7 * source.FlatMagicDamageMod
                     },
