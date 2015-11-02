@@ -422,8 +422,8 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     R.Cast();
-                    Utility.DelayAction.Add(170, () => UseW(270));
-                    Utility.DelayAction.Add(280, () => forcecastQ(targetR));
+                    Utility.DelayAction.Add(300, () => UseW(300));
+                    Utility.DelayAction.Add(305, () => forcecastQ(targetR));
                 }
             }
             else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
@@ -440,9 +440,9 @@ namespace HoolaRiven
                 if (targetR.IsValidTarget() && targetR != null && !targetR.IsZombie && !InWRange(targetR))
                 {
                     E.Cast(targetR.Position);
-                    Utility.DelayAction.Add(10, () => UseCastItem(200));
-                    Utility.DelayAction.Add(220, () => UseW(200));
-                    Utility.DelayAction.Add(280, () => forcecastQ(targetR));
+                    Utility.DelayAction.Add(10, () => UseCastItem(300));
+                    Utility.DelayAction.Add(300, () => UseW(300));
+                    Utility.DelayAction.Add(305, () => forcecastQ(targetR));
                 }
             }
             else if (!UseHoola && W.IsReady() && targetR != null && E.IsReady())
@@ -451,7 +451,7 @@ namespace HoolaRiven
                 {
                     E.Cast(targetR.Position);
                     Utility.DelayAction.Add(10, () => UseCastItem(200));
-                    Utility.DelayAction.Add(220, () => UseW(200));
+                    Utility.DelayAction.Add(300, () => UseW(300));
                 }
             }
             else if (E.IsReady())
