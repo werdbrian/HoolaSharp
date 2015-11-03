@@ -663,8 +663,8 @@ namespace HoolaRiven
             var target = TargetSelector.GetSelectedTarget();
             if (target != null && target.IsValidTarget() && !target.IsZombie)
             {
-                W.Cast();
-                Utility.DelayAction.Add(10, () => Player.Spellbook.CastSpell(Flash, target.Position));
+                UseW(300);
+                Utility.DelayAction.Add(50, () => Player.Spellbook.CastSpell(Flash, target.Position));
             }
         }
 
