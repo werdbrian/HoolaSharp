@@ -402,7 +402,7 @@ namespace HoolaRiven
             {
                 E.Cast(Mobs[0].Position);
                 Utility.DelayAction.Add(1, () => UseCastItem(200));
-                Utility.DelayAction.Add(2, () => UseW(500));
+                Utility.DelayAction.Add(300, () => UseW(500));
             }
         }
 
