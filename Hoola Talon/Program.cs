@@ -1,0 +1,244 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms.VisualStyles;
+using LeagueSharp;
+using LeagueSharp.Common;
+using Color = System.Drawing.Color;
+using ItemData = LeagueSharp.Common.Data.ItemData;
+using SharpDX;
+
+
+namespace HoolaTalon
+{
+    public class Program
+    {
+        private static Menu Menu;
+        private static Orbwalking.Orbwalker Orbwalker;
+        private static Obj_AI_Hero Player = ObjectManager.Player;
+        private static HpBarIndicator Indicator = new HpBarIndicator();
+        private static Spell Q, W, E, R;
+        static void Main()
+        {
+            CustomEvents.Game.OnGameLoad += OnGameLoad;
+        }
+
+        static void OnGameLoad(EventArgs args)
+        {
+            if (Player.ChampionName != "Talon") return;
+            Game.PrintChat("Hoola Talon - Loaded Successfully, Good Luck! :)");
+
+            Q = new Spell(SpellSlot.Q);
+            W = new Spell(SpellSlot.W, 720f);
+            E = new Spell(SpellSlot.E, 700f);
+            R = new Spell(SpellSlot.R, 600f) { Delay = 0.1f, Speed = 902f * 2 };
+
+            W.SetSkillshot(0.25f, 52f * (float)Math.PI / 180, 902f * 2, false, SkillshotType.SkillshotCone);
+            E.SetTargetted(0.25f, float.MaxValue);
+
+            Game.OnUpdate += OnTick;
+            Obj_AI_Base.OnDoCast += OnDoCast;
+            Spellbook.OnCastSpell += OnCast;
+            Drawing.OnDraw += OnDraw;
+
+            OnMenuLoad();
+        }
+
+        private static void OnDraw(EventArgs args)
+        {
+            Render.Circle.DrawCircle(Player.Position, E.Range + W.Range, E.IsReady() && W.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            Render.Circle.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            Render.Circle.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.LimeGreen : Color.IndianRed);
+        }
+
+        private static void OnCast(Spellbook sender, SpellbookCastSpellEventArgs args)
+        {
+            if (args.Slot == SpellSlot.E)
+            {
+                if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo && args.Target is Obj_AI_Hero) CastYoumoo();
+            }
+            if (args.Slot == SpellSlot.Q) Orbwalking.LastAATick = 0;
+        }
+
+        private static void OnDoCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (!sender.IsMe || !Orbwalking.IsAutoAttack(args.SData.Name)) return;
+
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+            {
+                if (args.Target is Obj_AI_Hero)
+                {
+                    var target = (Obj_AI_Hero) args.Target;
+                    if (!target.IsDead)
+                    {
+                        if (Q.IsReady()) Q.Cast();
+                        UseCastItem(300);
+                        if (!Q.IsReady()) W.Cast(target.ServerPosition);
+                    }
+                }
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear)
+            {
+                if (args.Target is Obj_AI_Minion)
+                {
+                    var target = (Obj_AI_Minion)args.Target;
+                    if (!target.IsDead)
+                    {
+                        if (Q.IsReady()) Q.Cast();
+                        UseCastItem(300);
+                    }
+                }
+            }
+        }
+
+        private static void OnTick(EventArgs args)
+        {
+            Killsteal();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo) Combo();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed) Harass();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) LaneClear();
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.LaneClear) JungleClear();
+        }
+
+        private static void Killsteal()
+        {
+            var targets = HeroManager.Enemies.Where(x => x.IsValidTarget() && Player.Distance(x.ServerPosition) <= E.Range + W.Range && !x.IsZombie && !x.IsDead);
+            if (W.IsReady())
+            {
+                foreach (var target in targets)
+                {
+                    if (target.Health <= W.GetDamage2(target) * 2)
+                    {
+                        var useminions =
+                            ObjectManager.Get<Obj_AI_Minion>()
+                                .Where(
+                                    x =>
+                                        x.IsValid && Player.Distance(x.ServerPosition) <= E.Range);
+                        var useenemys =
+                            HeroManager.Enemies.Where(
+                                x => x.IsValidTarget(E.Range) && Player.Distance(x.ServerPosition) <= E.Range);
+                        if (Player.Distance(target.ServerPosition) < W.Range && Player.Mana >= W.ManaCost)
+                        {
+                            W.Cast(target.ServerPosition);
+                        }
+                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && useminions != null && Player.Mana >= E.ManaCost + W.ManaCost)
+                        {
+                            E.Cast((Obj_AI_Minion)useminions);
+                            W.Cast(target.ServerPosition);
+                        }
+                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && useenemys != null && Player.Mana >= E.ManaCost + W.ManaCost)
+                        {
+                            E.Cast((Obj_AI_Hero)useenemys);
+                            W.Cast(target.ServerPosition);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void Combo()
+        {
+            var target = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+            if (target.IsValid && !Orbwalker.InAutoAttackRange(target) && E.IsReady()) E.Cast(target);
+            if (!E.IsReady() && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
+            if (target.Health < R.GetDamage2(target) && Player.Distance(target.Position) <= R.Range - 50) R.Cast();
+        }
+
+        private static void Harass()
+        {
+            var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
+            if (target.IsValidTarget(W.Range)) W.Cast(target.ServerPosition);
+        }
+
+        private static void JungleClear()
+        {
+            var Mobs = MinionManager.GetMinions(W.Range, MinionTypes.All, MinionTeam.Neutral, MinionOrderTypes.MaxHealth);
+
+            if (Mobs.Count <= 0)
+                return;
+
+            if (W.IsReady())
+            {
+
+                List<Vector2> minionVec2List = new List<Vector2>();
+
+                foreach (var Mob in Mobs)
+                    minionVec2List.Add(Mob.ServerPosition.To2D());
+
+                var MaxHit = MinionManager.GetBestCircularFarmLocation(minionVec2List, 200f, W.Range);
+
+                if (MaxHit.MinionsHit >= 1)
+                    W.Cast(MaxHit.Position);
+            }
+        }
+
+        private static void LaneClear()
+        {
+            var Minions = MinionManager.GetMinions(W.Range, MinionTypes.All, MinionTeam.Enemy);
+
+            if (Minions.Count <= 0)
+                return;
+
+            if (W.IsReady())
+            {
+
+                List<Vector2> minionVec2List = new List<Vector2>();
+
+                foreach (var Minion in Minions)
+                    minionVec2List.Add(Minion.ServerPosition.To2D());
+
+                var MaxHit = MinionManager.GetBestCircularFarmLocation(minionVec2List, 200f, W.Range);
+
+                if (MaxHit.MinionsHit >= 3)
+                    W.Cast(MaxHit.Position);
+            }
+        }
+
+        static void UseCastItem(int t)
+        {
+            for (int i = 0; i < t; i = i + 1)
+            {
+                if (HasItem())
+                    Utility.DelayAction.Add(i, () => CastItem());
+            }
+        }
+
+        static void CastItem()
+        {
+
+            if (ItemData.Tiamat_Melee_Only.GetItem().IsReady())
+                ItemData.Tiamat_Melee_Only.GetItem().Cast();
+            if (ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
+                ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
+        }
+        static void CastYoumoo()
+        {
+            if (ItemData.Youmuus_Ghostblade.GetItem().IsReady())
+                ItemData.Youmuus_Ghostblade.GetItem().Cast();
+        }
+        static bool HasItem()
+        {
+            if (ItemData.Tiamat_Melee_Only.GetItem().IsReady() || ItemData.Ravenous_Hydra_Melee_Only.GetItem().IsReady())
+            {
+                return true;
+            }
+            return false;
+        }
+        
+        
+        private static void OnMenuLoad()
+        {
+            Menu = new Menu("Hoola Talon", "hoolatalon", true);
+
+            Menu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
+            Orbwalker = new Orbwalking.Orbwalker(Menu.SubMenu("Orbwalking"));
+
+            var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
+            TargetSelector.AddToMenu(targetSelectorMenu);
+            Menu.AddSubMenu(targetSelectorMenu);
+            
+
+            Menu.AddToMainMenu();
+        }
+    }
+}
