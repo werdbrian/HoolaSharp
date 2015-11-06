@@ -25,6 +25,9 @@ namespace HoolaTalon
         static bool DW { get { return Menu.Item("DW").GetValue<bool>(); } }
         static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
         static bool DR { get { return Menu.Item("DR").GetValue<bool>(); } }
+        static bool KSW { get { return Menu.Item("KSW").GetValue<bool>(); } }
+        static bool KSEW { get { return Menu.Item("KSEW").GetValue<bool>(); } }
+        static bool KSR { get { return Menu.Item("KSR").GetValue<bool>(); } }
         static void Main()
         {
             CustomEvents.Game.OnGameLoad += OnGameLoad;
@@ -111,7 +114,7 @@ namespace HoolaTalon
         private static void Killsteal()
         {
             var targets = HeroManager.Enemies.Where(x => x.IsValidTarget() && Player.Distance(x.ServerPosition) <= E.Range + W.Range && !x.IsZombie && !x.IsDead);
-            if (W.IsReady())
+            if (W.IsReady() && KSW)
             {
                 foreach (var target in targets)
                 {
@@ -121,7 +124,7 @@ namespace HoolaTalon
                         {
                             W.Cast(target.ServerPosition);
                         }
-                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && Player.Mana >= E.ManaCost + W.ManaCost)
+                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && Player.Mana >= E.ManaCost + W.ManaCost && KSEW)
                         {
                             var minions = MinionManager.GetMinions(E.Range);
                             if (minions.Count != 0)
@@ -166,7 +169,7 @@ namespace HoolaTalon
             var target = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
             if (target.IsValid && !Orbwalker.InAutoAttackRange(target) && E.IsReady()) E.Cast(target);
             if (!E.IsReady() && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
-            if (target.Health < R.GetDamage2(target) && Player.Distance(target.Position) <= R.Range - 50) R.Cast();
+            if (target.Health < R.GetDamage2(target) && Player.Distance(target.Position) <= R.Range - 50 && KSR) R.Cast();
         }
 
         private static void Harass()
@@ -266,6 +269,13 @@ namespace HoolaTalon
             Draw.AddItem(new MenuItem("DW", "Draw W Range").SetValue(true));
             Draw.AddItem(new MenuItem("DE", "Draw E Range").SetValue(true));
             Draw.AddItem(new MenuItem("DR", "Draw E W Killsteal Range").SetValue(true));
+            Menu.AddSubMenu(Draw);
+
+
+            var Killsteal = new Menu("Killsteal", "Killsteal");
+            Killsteal.AddItem(new MenuItem("KSW", "Killsteal W").SetValue(true));
+            Killsteal.AddItem(new MenuItem("KSEW", "Killsteal EW").SetValue(true));
+            Killsteal.AddItem(new MenuItem("KSR", "Killsteal R (While Combo Only)").SetValue(true));
             Menu.AddSubMenu(Draw);
 
             Menu.AddToMainMenu();
