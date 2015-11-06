@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
 using LeagueSharp;
 using LeagueSharp.Common;
 using Color = System.Drawing.Color;
 using ItemData = LeagueSharp.Common.Data.ItemData;
 using SharpDX;
+using Menu = LeagueSharp.Common.Menu;
+using MenuItem = LeagueSharp.Common.MenuItem;
 
 
 namespace HoolaTalon
@@ -18,6 +21,10 @@ namespace HoolaTalon
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, W, E, R;
+        static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
+        static bool DW { get { return Menu.Item("DW").GetValue<bool>(); } }
+        static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
+        static bool DR { get { return Menu.Item("DR").GetValue<bool>(); } }
         static void Main()
         {
             CustomEvents.Game.OnGameLoad += OnGameLoad;
@@ -39,6 +46,7 @@ namespace HoolaTalon
             Game.OnUpdate += OnTick;
             Obj_AI_Base.OnDoCast += OnDoCast;
             Spellbook.OnCastSpell += OnCast;
+            Drawing.OnEndScene += OnEndScene;
             Drawing.OnDraw += OnDraw;
 
             OnMenuLoad();
@@ -46,9 +54,9 @@ namespace HoolaTalon
 
         private static void OnDraw(EventArgs args)
         {
-            Render.Circle.DrawCircle(Player.Position, E.Range + W.Range, E.IsReady() && W.IsReady() ? Color.LimeGreen : Color.IndianRed);
-            Render.Circle.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.LimeGreen : Color.IndianRed);
-            Render.Circle.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if(DR)Render.Circle.DrawCircle(Player.Position, E.Range + W.Range, E.IsReady() && W.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if(DW)Render.Circle.DrawCircle(Player.Position, W.Range, W.IsReady() ? Color.LimeGreen : Color.IndianRed);
+            if(DE)Render.Circle.DrawCircle(Player.Position, E.Range, E.IsReady() ? Color.LimeGreen : Color.IndianRed);
         }
 
         private static void OnCast(Spellbook sender, SpellbookCastSpellEventArgs args)
@@ -109,27 +117,44 @@ namespace HoolaTalon
                 {
                     if (target.Health <= W.GetDamage2(target) * 2)
                     {
-                        var useminions =
-                            ObjectManager.Get<Obj_AI_Minion>()
-                                .Where(
-                                    x =>
-                                        x.IsValid && Player.Distance(x.ServerPosition) <= E.Range);
-                        var useenemys =
-                            HeroManager.Enemies.Where(
-                                x => x.IsValidTarget(E.Range) && Player.Distance(x.ServerPosition) <= E.Range);
                         if (Player.Distance(target.ServerPosition) < W.Range && Player.Mana >= W.ManaCost)
                         {
                             W.Cast(target.ServerPosition);
                         }
-                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && useminions != null && Player.Mana >= E.ManaCost + W.ManaCost)
+                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && Player.Mana >= E.ManaCost + W.ManaCost)
                         {
-                            E.Cast((Obj_AI_Minion)useminions);
-                            W.Cast(target.ServerPosition);
-                        }
-                        else if (E.IsReady() && Player.Distance(target.ServerPosition) > W.Range && useenemys != null && Player.Mana >= E.ManaCost + W.ManaCost)
-                        {
-                            E.Cast((Obj_AI_Hero)useenemys);
-                            W.Cast(target.ServerPosition);
+                            var minions = MinionManager.GetMinions(E.Range);
+                            if (minions.Count != 0)
+                            {
+                                foreach (var minion in minions)
+                                {
+                                    if (minion.IsValidTarget(E.Range) &&
+                                        minion.Distance(target.ServerPosition) <= W.Range)
+                                    {
+                                        Game.ShowPing(PingCategory.Normal, minion.Position);
+                                        E.Cast(minion);
+                                        W.Cast(target.ServerPosition);
+                                    }
+
+                                }
+                            }
+                            if (minions.Count == 0)
+                            {
+                                var heros = HeroManager.Enemies;
+                                if (heros.Count != 0)
+                                {
+                                    foreach (var hero in heros)
+                                    {
+                                        if (hero.IsValidTarget(E.Range) &&
+                                            hero.Distance(target.ServerPosition) <= W.Range)
+                                        {
+                                            Game.ShowPing(PingCategory.Normal, hero.Position);
+                                            E.Cast(hero);
+                                            W.Cast(target.ServerPosition);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -188,9 +213,7 @@ namespace HoolaTalon
                     minionVec2List.Add(Minion.ServerPosition.To2D());
 
                 var MaxHit = MinionManager.GetBestCircularFarmLocation(minionVec2List, 200f, W.Range);
-
-                if (MaxHit.MinionsHit >= 3)
-                    W.Cast(MaxHit.Position);
+                    if (MaxHit.MinionsHit >= 3 && W.IsReady()) W.Cast(MaxHit.Position);
             }
         }
 
@@ -236,9 +259,46 @@ namespace HoolaTalon
             var targetSelectorMenu = new Menu("Target Selector", "Target Selector");
             TargetSelector.AddToMenu(targetSelectorMenu);
             Menu.AddSubMenu(targetSelectorMenu);
-            
+
+
+            var Draw = new Menu("Draw", "Draw");
+            Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
+            Draw.AddItem(new MenuItem("DW", "Draw W Range").SetValue(true));
+            Draw.AddItem(new MenuItem("DE", "Draw E Range").SetValue(true));
+            Draw.AddItem(new MenuItem("DR", "Draw E W Killsteal Range").SetValue(true));
+            Menu.AddSubMenu(Draw);
 
             Menu.AddToMainMenu();
+        }
+
+        private static float getComboDamage(Obj_AI_Base enemy)
+        {
+            if (enemy != null)
+            {
+                float damage = 0;
+                if (Q.IsReady()) damage += Q.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy);
+                if (W.IsReady()) damage += W.GetDamage2(enemy) * 2;
+                if (R.IsReady()) damage += R.GetDamage2(enemy) * 2;
+                if (HasItem()) damage += (float)Player.GetAutoAttackDamage2(enemy) * 0.7f;
+
+                return damage;
+            }
+            return 0;
+        }
+        private static void OnEndScene(EventArgs args)
+        {
+            foreach (
+                var enemy in
+                    ObjectManager.Get<Obj_AI_Hero>()
+                        .Where(ene => ene.IsValidTarget() && !ene.IsZombie))
+            {
+                if (Dind)
+                {
+                    Indicator.unit = enemy;
+                    Indicator.drawDmg(getComboDamage(enemy), new SharpDX.ColorBGRA(255, 204, 0, 170));
+                }
+
+            }
         }
     }
 }
