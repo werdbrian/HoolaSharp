@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using LeagueSharp;
 using LeagueSharp.Common;
 using Color = System.Drawing.Color;
@@ -167,7 +165,7 @@ namespace HoolaTalon
         private static void Combo()
         {
             var target = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
-            if (target.IsValid && !Orbwalker.InAutoAttackRange(target) && E.IsReady()) E.Cast(target);
+            if (!Orbwalker.InAutoAttackRange(target) && E.IsReady()) E.Cast(target);
             if (!E.IsReady() && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
             if (target.Health < R.GetDamage2(target) && Player.Distance(target.Position) <= R.Range - 50 && KSR) R.Cast();
         }
@@ -276,7 +274,7 @@ namespace HoolaTalon
             Killsteal.AddItem(new MenuItem("KSW", "Killsteal W").SetValue(true));
             Killsteal.AddItem(new MenuItem("KSEW", "Killsteal EW").SetValue(true));
             Killsteal.AddItem(new MenuItem("KSR", "Killsteal R (While Combo Only)").SetValue(true));
-            Menu.AddSubMenu(Draw);
+            Menu.AddSubMenu(Killsteal);
 
             Menu.AddToMainMenu();
         }
