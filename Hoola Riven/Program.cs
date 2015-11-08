@@ -398,14 +398,14 @@ namespace HoolaRiven
         static void Combo()
         {
             var targetR = TargetSelector.GetTarget(250 + Player.AttackRange + 70, TargetSelector.DamageType.Physical);
-            if (R.IsReady() && R.Instance.Name == IsFirstR && Orbwalker.InAutoAttackRange(targetR) && AlwaysR && targetR != null) R.Cast();
-            if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && InWRange(targetR) && ComboW && AlwaysR && targetR != null)
+            if (R.IsReady() && R.Instance.Name == IsFirstR && Orbwalker.InAutoAttackRange(targetR) && targetR.IsValidTarget() && AlwaysR && targetR != null) R.Cast();
+            if (R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR.IsValidTarget() && InWRange(targetR) && ComboW && AlwaysR && targetR != null)
             {
                 R.Cast();
                 UseW(200);
             }
-            if (W.IsReady() && InWRange(targetR) && ComboW && targetR != null) W.Cast();
-            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
+            if (W.IsReady() && InWRange(targetR) && targetR.IsValidTarget() && ComboW && targetR != null) W.Cast();
+            if (UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && targetR.IsValidTarget() && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -415,7 +415,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(305, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
+            else if (!UseHoola && R.IsReady() && R.Instance.Name == IsFirstR && W.IsReady() && targetR.IsValidTarget() && targetR != null && E.IsReady() && targetR.IsValidTarget() && !targetR.IsZombie && (IsKillableR(targetR) || AlwaysR))
             {
                 if (!InWRange(targetR))
                 {
@@ -424,7 +424,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(300, () => UseW(200));
                 }
             }
-            else if (UseHoola && W.IsReady() && E.IsReady())
+            else if (UseHoola && W.IsReady() && targetR.IsValidTarget() && E.IsReady())
             {
                 if (targetR.IsValidTarget() && targetR != null && !targetR.IsZombie && !InWRange(targetR))
                 {
@@ -434,7 +434,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(305, () => forcecastQ(targetR));
                 }
             }
-            else if (!UseHoola && W.IsReady() && targetR != null && E.IsReady())
+            else if (!UseHoola && W.IsReady() && targetR != null && E.IsReady() && targetR.IsValidTarget())
             {
                 if (targetR.IsValidTarget() && targetR != null && !targetR.IsZombie && !InWRange(targetR))
                 {
@@ -443,7 +443,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(300, () => UseW(200));
                 }
             }
-            else if (E.IsReady())
+            else if (E.IsReady() && targetR.IsValidTarget())
             {
                 if (targetR.IsValidTarget() && !targetR.IsZombie && targetR != null && !InWRange(targetR))
                 {
