@@ -19,6 +19,8 @@ namespace HoolaTalon
         private static Obj_AI_Hero Player = ObjectManager.Player;
         private static HpBarIndicator Indicator = new HpBarIndicator();
         private static Spell Q, W, E, R;
+        private static String IsFirstR = "TalonShadowAssault";
+        private static String IsSecondR = "talonshadowassaulttoggle";
         static bool Dind { get { return Menu.Item("Dind").GetValue<bool>(); } }
         static bool DW { get { return Menu.Item("DW").GetValue<bool>(); } }
         static bool DE { get { return Menu.Item("DE").GetValue<bool>(); } }
@@ -26,6 +28,18 @@ namespace HoolaTalon
         static bool KSW { get { return Menu.Item("KSW").GetValue<bool>(); } }
         static bool KSEW { get { return Menu.Item("KSEW").GetValue<bool>(); } }
         static bool KSR { get { return Menu.Item("KSR").GetValue<bool>(); } }
+        static bool CQ { get { return Menu.Item("CQ").GetValue<bool>(); } }
+        static bool CW { get { return Menu.Item("CW").GetValue<bool>(); } }
+        static bool CE { get { return Menu.Item("CE").GetValue<bool>(); } }
+        static bool CR { get { return Menu.Item("CR").GetValue<bool>(); } }
+        static int CRS { get { return Menu.Item("CRS").GetValue<StringList>().SelectedIndex; } }
+        static bool CAR { get { return Menu.Item("CAR").GetValue<bool>(); } }
+        static bool HQ { get { return Menu.Item("HQ").GetValue<bool>(); } }
+        static bool HW { get { return Menu.Item("HW").GetValue<bool>(); } }
+        static bool HE { get { return Menu.Item("HE").GetValue<bool>(); } }
+        static bool LQ { get { return Menu.Item("LQ").GetValue<bool>(); } }
+        static bool LW { get { return Menu.Item("LW").GetValue<bool>(); } }
+        static int minhit { get { return Menu.Item("minhit").GetValue<Slider>().Value; } }
         static void Main()
         {
             CustomEvents.Game.OnGameLoad += OnGameLoad;
@@ -73,16 +87,42 @@ namespace HoolaTalon
         {
             if (!sender.IsMe || !Orbwalking.IsAutoAttack(args.SData.Name)) return;
 
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 if (args.Target is Obj_AI_Hero)
                 {
                     var target = (Obj_AI_Hero) args.Target;
                     if (!target.IsDead)
                     {
-                        if (Q.IsReady()) Q.Cast();
+                        if (Q.IsReady() && CQ) Q.Cast();
                         UseCastItem(300);
-                        if (!Q.IsReady()) W.Cast(target.ServerPosition);
+                        if ((!Q.IsReady() || (Q.IsReady() && !CQ)) && CW) W.Cast(target.ServerPosition);
+                    }
+                }
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
+            {
+                if (args.Target is Obj_AI_Hero)
+                {
+                    var target = (Obj_AI_Hero)args.Target;
+                    if (!target.IsDead)
+                    {
+                        if (Q.IsReady() && CQ) Q.Cast();
+                        UseCastItem(300);
+                        if ((!Q.IsReady() || (Q.IsReady() && !CQ)) && CW) W.Cast(target.ServerPosition);
+                    }
+                }
+            }
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
+            {
+                if (args.Target is Obj_AI_Hero)
+                {
+                    var target = (Obj_AI_Hero)args.Target;
+                    if (!target.IsDead)
+                    {
+                        if (Q.IsReady() && HQ) Q.Cast();
+                        UseCastItem(300);
+                        if ((!Q.IsReady() || (Q.IsReady() && !HQ)) && HW) W.Cast(target.ServerPosition);
                     }
                 }
             }
@@ -93,7 +133,7 @@ namespace HoolaTalon
                     var target = (Obj_AI_Minion)args.Target;
                     if (!target.IsDead)
                     {
-                        if (Q.IsReady()) Q.Cast();
+                        if (Q.IsReady() && LQ) Q.Cast();
                         UseCastItem(300);
                     }
                 }
@@ -134,7 +174,7 @@ namespace HoolaTalon
                                     {
                                         Game.ShowPing(PingCategory.Normal, minion.Position);
                                         E.Cast(minion);
-                                        W.Cast(target.ServerPosition);
+                                        Utility.DelayAction.Add(10, ()=> W.Cast(target.ServerPosition));
                                     }
 
                                 }
@@ -151,7 +191,7 @@ namespace HoolaTalon
                                         {
                                             Game.ShowPing(PingCategory.Normal, hero.Position);
                                             E.Cast(hero);
-                                            W.Cast(target.ServerPosition);
+                                            Utility.DelayAction.Add(10, () => W.Cast(target.ServerPosition));
                                         }
                                     }
                                 }
@@ -165,15 +205,24 @@ namespace HoolaTalon
         private static void Combo()
         {
             var target = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
-            if (!Orbwalker.InAutoAttackRange(target) && E.IsReady()) E.Cast(target);
-            if (!E.IsReady() && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
+            if (CR && CRS == 0 && R.IsReady() && Player.Distance(target.ServerPosition) <= R.Range &&
+                (E.IsReady() || (!E.IsReady() && !CE)) && R.Instance.Name == IsFirstR) R.Cast();
+            if (!Orbwalker.InAutoAttackRange(target) && E.IsReady() && CE && ((CR && CRS == 0 && R.IsReady() && R.Instance.Name == IsSecondR) || (CR && CRS == 1 && R.IsReady() && R.Instance.Name == IsFirstR) || !R.IsReady() || (R.IsReady() && !CR))) E.Cast(target);
+            if ((!E.IsReady() || (E.IsReady() && !CE)) && CW && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
             if (target.Health < R.GetDamage2(target) && Player.Distance(target.Position) <= R.Range - 50 && KSR) R.Cast();
+            if (R.IsReady() && CR && CRS == 1 && Player.Distance(target.ServerPosition) <= R.Range &&
+                (!E.IsReady() || (E.IsReady() && !CE)) && (!W.IsReady() || (W.IsReady() && !CW)))
+            {
+                R.Cast();
+                R.Cast();
+            }
         }
 
         private static void Harass()
         {
-            var target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
-            if (target.IsValidTarget(W.Range)) W.Cast(target.ServerPosition);
+            var target = TargetSelector.GetTarget(E.Range, TargetSelector.DamageType.Physical);
+            if (!Orbwalker.InAutoAttackRange(target) && E.IsReady() && HE) E.Cast(target);
+            if ((!E.IsReady() || (E.IsReady() && !HE)) && HW && !Orbwalker.InAutoAttackRange(target) && Player.Distance(target) <= W.Range) W.Cast(target.ServerPosition);
         }
 
         private static void JungleClear()
@@ -214,7 +263,9 @@ namespace HoolaTalon
                     minionVec2List.Add(Minion.ServerPosition.To2D());
 
                 var MaxHit = MinionManager.GetBestCircularFarmLocation(minionVec2List, 200f, W.Range);
-                    if (MaxHit.MinionsHit >= 3 && W.IsReady()) W.Cast(MaxHit.Position);
+                for (int i = 20;i > 0;i--)
+                    if (MaxHit.MinionsHit >= minhit)
+                    if (MaxHit.MinionsHit >= i && W.IsReady() && LW) W.Cast(MaxHit.Position);
             }
         }
 
@@ -261,6 +312,26 @@ namespace HoolaTalon
             TargetSelector.AddToMenu(targetSelectorMenu);
             Menu.AddSubMenu(targetSelectorMenu);
 
+            var Combo = new Menu("Combo", "Combo");
+            Combo.AddItem(new MenuItem("CQ", "Use Q").SetValue(true));
+            Combo.AddItem(new MenuItem("CW", "Use W").SetValue(true));
+            Combo.AddItem(new MenuItem("CE", "Use E").SetValue(true));
+            Combo.AddItem(new MenuItem("CR", "Use R").SetValue(true));
+            Combo.AddItem(new MenuItem("CRS", "R Option").SetValue(new StringList(new[] {"First (R E Q W)", "Last (E Q W R)"})));
+            Combo.AddItem(new MenuItem("CAR", "Auto R Can Hit > X (0 = Don't)").SetValue(new Slider(3,0,5)));
+            Menu.AddSubMenu(Combo);
+
+            var Harass = new Menu("Harass", "Harass");
+            Harass.AddItem(new MenuItem("HQ", "Use Q").SetValue(true));
+            Harass.AddItem(new MenuItem("HW", "Use W").SetValue(true));
+            Harass.AddItem(new MenuItem("HE", "Use E").SetValue(false));
+            Menu.AddSubMenu(Harass);
+
+            var LaneClear = new Menu("LaneClear", "LaneClear");
+            LaneClear.AddItem(new MenuItem("LQ", "Use Q").SetValue(true));
+            LaneClear.AddItem(new MenuItem("LW", "Use W").SetValue(true));
+            LaneClear.AddItem(new MenuItem("minhit", "W Minimum Hit").SetValue(new Slider(3,0,5)));
+            Menu.AddSubMenu(LaneClear);
 
             var Draw = new Menu("Draw", "Draw");
             Draw.AddItem(new MenuItem("Dind", "Draw Damage Indicator").SetValue(true));
