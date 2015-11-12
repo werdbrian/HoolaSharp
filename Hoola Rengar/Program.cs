@@ -240,8 +240,6 @@ namespace HoolaRengar
             Menu.AddToMainMenu();
 
             SPrediction.Prediction.Initialize(Menu);
-
-            if (Menu.SubMenu("SPRED") != null) Menu.SubMenu("SPRED").DisplayName = "Prediction";
         }
     }
 }
