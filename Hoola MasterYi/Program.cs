@@ -128,8 +128,8 @@ namespace HoolaMasterYi
         {
             var target = Orbwalker.GetTarget();
             Orbwalking.LastAATick = 0;
-            if (Orbwalking.InAutoAttackRange(target)) Player.IssueOrder(GameObjectOrder.AttackUnit, Orbwalker.GetTarget());
-            else Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, 50));
+            if (Orbwalking.InAutoAttackRange(target)) Utility.DelayAction.Add(3,()=>Player.IssueOrder(GameObjectOrder.AttackUnit, Orbwalker.GetTarget()));
+            else Utility.DelayAction.Add(3,()=>Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, 50)));
         }
 
         private static void OnPlay(Obj_AI_Base Sender, GameObjectPlayAnimationEventArgs args)
