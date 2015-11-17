@@ -128,8 +128,8 @@ namespace HoolaMasterYi
         {
             var target = Orbwalker.GetTarget();
             Orbwalking.LastAATick = 0;
-            if (Orbwalking.InAutoAttackRange(target)) Utility.DelayAction.Add(3,()=>Player.IssueOrder(GameObjectOrder.AttackUnit, Orbwalker.GetTarget()));
-            else Utility.DelayAction.Add(3,()=>Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, 50)));
+            if (Orbwalking.InAutoAttackRange(target)) Utility.DelayAction.Add(10,()=>Player.IssueOrder(GameObjectOrder.AttackUnit, Orbwalker.GetTarget()));
+            else Utility.DelayAction.Add(10,()=>Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, 50)));
         }
 
         private static void OnPlay(Obj_AI_Base Sender, GameObjectPlayAnimationEventArgs args)
@@ -335,8 +335,8 @@ namespace HoolaMasterYi
                         x => x.IsValidTarget(ItemData.Blade_of_the_Ruined_King.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Damage.GetItemDamage2(Player,target,Damage.DamageItems.Bilgewater)) ItemData.Bilgewater_Cutlass.GetItem().Cast(target);
-                    if (target.Health < Damage.GetItemDamage2(Player, target, Damage.DamageItems.Botrk)) ItemData.Blade_of_the_Ruined_King.GetItem().Cast(target);
+                    if (target.Health < Damage.GetItemDamage(Player,target,Damage.DamageItems.Bilgewater)) ItemData.Bilgewater_Cutlass.GetItem().Cast(target);
+                    if (target.Health < Damage.GetItemDamage(Player, target, Damage.DamageItems.Botrk)) ItemData.Blade_of_the_Ruined_King.GetItem().Cast(target);
                 }
             }
             if (KsT &&
@@ -348,8 +348,8 @@ namespace HoolaMasterYi
                         x => x.IsValidTarget(ItemData.Ravenous_Hydra_Melee_Only.Range) && !x.IsZombie);
                 foreach (var target in targets)
                 {
-                    if (target.Health < Damage.GetItemDamage2(Player, target, Damage.DamageItems.Tiamat)) ItemData.Tiamat_Melee_Only.GetItem().Cast();
-                    if (target.Health < Damage.GetItemDamage2(Player, target, Damage.DamageItems.Hydra)) ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
+                    if (target.Health < Damage.GetItemDamage(Player, target, Damage.DamageItems.Tiamat)) ItemData.Tiamat_Melee_Only.GetItem().Cast();
+                    if (target.Health < Damage.GetItemDamage(Player, target, Damage.DamageItems.Hydra)) ItemData.Ravenous_Hydra_Melee_Only.GetItem().Cast();
                 }
             }
         }
@@ -373,23 +373,23 @@ namespace HoolaMasterYi
             if (Q.IsReady() && target.IsValid) Q.Cast(target);
         }
         
-        static float getComboDamage2(Obj_AI_Base enemy)
+        static float getComboDamage(Obj_AI_Base enemy)
         {
             if (enemy != null)
             {
                 float damage = 0;
 
                 if (Q.IsReady())
-                    damage += Q.GetDamage2(enemy) + (float)Player.GetAutoAttackDamage2(enemy, true);
+                    damage += Q.GetDamage(enemy) + (float)Player.GetAutoAttackDamage(enemy, true);
 
                 if (E.IsReady())
-                    damage += E.GetDamage2(enemy);
+                    damage += E.GetDamage(enemy);
 
                 if (W.IsReady())
-                    damage += (float)Player.GetAutoAttackDamage2(enemy, true);
+                    damage += (float)Player.GetAutoAttackDamage(enemy, true);
 
                 if (!Player.IsWindingUp)
-                    damage += (float)Player.GetAutoAttackDamage2(enemy, true);
+                    damage += (float)Player.GetAutoAttackDamage(enemy, true);
 
                 return damage;
             }
@@ -406,7 +406,7 @@ namespace HoolaMasterYi
                 if (Dind)
                 {
                     Indicator.unit = enemy;
-                    Indicator.drawDmg(getComboDamage2(enemy), new ColorBGRA(255, 204, 0, 160));
+                    Indicator.drawDmg(getComboDamage(enemy), new ColorBGRA(255, 204, 0, 160));
                 }
                 
 
