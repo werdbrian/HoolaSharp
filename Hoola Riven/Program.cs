@@ -585,7 +585,7 @@ namespace HoolaRiven
                     Utility.DelayAction.Add(1, ForceW);
                 }
             }
-            if (Q.IsReady() && E.IsReady() && QStack == 3 && !Orbwalking.CanAttack && Orbwalking.CanMove(5))
+            if (Q.IsReady() && E.IsReady() && QStack == 3 && !Orbwalking.CanAttack() && Orbwalking.CanMove(5))
             {
                 var epos = Player.ServerPosition +
                           (Player.ServerPosition - target.ServerPosition).Normalized() * 300;

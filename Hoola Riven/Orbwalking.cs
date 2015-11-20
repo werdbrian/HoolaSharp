@@ -78,17 +78,16 @@ namespace HoolaRiven
         /// </summary>
         public enum OrbwalkingMode
         {
-            Flee,
             LastHit,
             Mixed,
             LaneClear,
             Combo,
-            Burst,
-            FastHarass,
             CustomMode,
+            Flee,
+            FastHarass,
+            Burst,
             None
         }
-        
         /// <summary>
         /// Spells that are not attacks even if they have the "attack" word in their name.
         /// </summary>
@@ -120,11 +119,6 @@ namespace HoolaRiven
             "renektonsuperexecute", "rengarnewpassivebuffdash", "trundleq", "xenzhaothrust", "xenzhaothrust2",
             "xenzhaothrust3", "viktorqbuff"
         };
-
-        /// <summary>
-        /// Champs whose auto attacks can't be cancelled
-        /// </summary>
-        private static readonly string[] NoCancelChamps = { "Kalista" };
 
         /// <summary>
         /// The last auto attack tick
@@ -189,7 +183,7 @@ namespace HoolaRiven
         /// <summary>
         /// The champion name
         /// </summary>
-        private static readonly string _championName;
+        private static string _championName;
 
         /// <summary>
         /// The random
@@ -298,16 +292,6 @@ namespace HoolaRiven
                 OnNonKillableMinion(minion);
             }
         }
-        
-        /// <summary>
-        /// Returns true if the unit is melee
-        /// </summary>
-        /// <param name="unit">The unit.</param>
-        /// <returns><c>true</c> if the specified unit is melee; otherwise, <c>false</c>.</returns>
-        public static bool IsMelee(this Obj_AI_Base unit)
-        {
-            return unit.CombatType == GameObjectCombatType.Melee;
-        }
 
         /// <summary>
         /// Returns true if the spellname is an auto-attack.
@@ -341,7 +325,7 @@ namespace HoolaRiven
 
                 return result + target.BoundingRadius;
             }
-        
+
             return result;
         }
 
@@ -378,7 +362,11 @@ namespace HoolaRiven
         /// Returns if the player's auto-attack is ready.
         /// </summary>
         /// <returns><c>true</c> if this instance can attack; otherwise, <c>false</c>.</returns>
-        public static bool CanAttack =>Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000 && Attack;
+        public static bool CanAttack()
+        {
+
+            return Utils.GameTimeTickCount >= LastAATick + Player.AttackDelay * 1000 && Attack;
+        }
 
         /// <summary>
         /// Returns true if moving won't cancel the auto-attack.
@@ -396,6 +384,7 @@ namespace HoolaRiven
             {
                 return true;
             }
+
             return (Utils.GameTimeTickCount >= LastAATick + Player.AttackCastDelay * 1000 + extraWindup);
         }
 
@@ -519,27 +508,6 @@ namespace HoolaRiven
             bool useFixedDistance = true,
             bool randomizeMinDistance = true)
         {
-            if (target.IsValidTarget() && CanAttack)
-            {
-                DisableNextAttack = false;
-                FireBeforeAttack(target);
-                Player.IssueOrder(GameObjectOrder.AttackUnit, target);
-                if (!DisableNextAttack)
-                {
-                    if (!NoCancelChamps.Contains(_championName))
-                    {
-                        _missileLaunched = false;
-                    }
-
-                    if (Player.IssueOrder(GameObjectOrder.AttackUnit, target))
-                    {
-                        LastAttackCommandT = Utils.GameTimeTickCount;
-                        _lastTarget = target;
-                    }
-
-                    return;
-                }
-            }
             if (Utils.GameTimeTickCount - LastAttackCommandT < (70 + Math.Min(60, Game.Ping)))
             {
                 return;
@@ -547,8 +515,22 @@ namespace HoolaRiven
 
             try
             {
+                if (target.IsValidTarget() && CanAttack())
+                {
+                    DisableNextAttack = false;
+                    FireBeforeAttack(target);
+                    Player.IssueOrder(GameObjectOrder.AttackUnit, target);
+                    if (!DisableNextAttack)
+                    {
+                        if (Player.IssueOrder(GameObjectOrder.AttackUnit, target))
+                        {
+                            LastAttackCommandT = Utils.GameTimeTickCount;
+                            _lastTarget = target;
+                        }
+                    }
+                }
 
-                if (CanMove(extraWindup))
+                else if (CanMove(extraWindup))
                 {
                     MoveTo(position, holdAreaRadius, false, useFixedDistance, randomizeMinDistance);
                 }
@@ -741,7 +723,7 @@ namespace HoolaRiven
             /// </summary>
             private string CustomModeName;
             /// <summary>
-            
+
             /// Initializes a new instance of the <see cref="Orbwalker"/> class.
             /// </summary>
             /// <param name="attachToMenu">The menu the orbwalker should attach to.</param>
@@ -782,18 +764,22 @@ namespace HoolaRiven
 
                 /* Delay sliders */
                 _config.AddItem(
-                    new MenuItem("ExtraWindup", "Extra windup time").SetShared().SetValue(new Slider(80, 0, 200)));
-                _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetShared().SetValue(new Slider(30, 0, 200)));
-                
+                    new MenuItem("ExtraWindup", "Extra windup time").SetShared().SetValue(new Slider(35)));
+                _config.AddItem(new MenuItem("FarmDelay", "Farm delay").SetShared().SetValue(new Slider(0)));
+
                 /*Load the menu*/
+
                 _config.AddItem(
                     new MenuItem("Flee", "Flee").SetShared().SetValue(new KeyBind('Z', KeyBindType.Press)));
 
                 _config.AddItem(
                     new MenuItem("LastHit", "Last hit").SetShared().SetValue(new KeyBind('X', KeyBindType.Press)));
 
-                _config.AddItem(new MenuItem("Farm", "Mixed").SetShared().SetValue(new KeyBind('C', KeyBindType.Press)));
-                _config.AddItem(new MenuItem("LWH", "Last hit While Harass").SetShared().SetValue(false));
+                _config.AddItem(
+                    new MenuItem("Farm", "Mixed").SetShared().SetValue(new KeyBind('C', KeyBindType.Press)));
+
+                _config.AddItem(
+                    new MenuItem("LWH", "Last Hit While Harass").SetShared().SetValue(false));
 
                 _config.AddItem(
                     new MenuItem("LaneClear", "LaneClear").SetShared().SetValue(new KeyBind('V', KeyBindType.Press)));
@@ -802,9 +788,11 @@ namespace HoolaRiven
                     new MenuItem("Orbwalk", "Combo").SetShared().SetValue(new KeyBind(32, KeyBindType.Press)));
 
                 _config.AddItem(
-                    new MenuItem("FastHarass", "FastHarass").SetShared().SetValue(new KeyBind('Y', KeyBindType.Press)));
-                _config.AddItem(
                     new MenuItem("Burst", "Burst").SetShared().SetValue(new KeyBind('T', KeyBindType.Press)));
+
+                _config.AddItem(
+                    new MenuItem("FastHarass", "Fast Harass").SetShared().SetValue(new KeyBind('Y', KeyBindType.Press)));
+
                 _config.AddItem(
                     new MenuItem("StillCombo", "Combo without moving").SetShared().SetValue(new KeyBind('N', KeyBindType.Press)));
 
@@ -900,14 +888,17 @@ namespace HoolaRiven
                     {
                         return OrbwalkingMode.Flee;
                     }
+
                     if (_config.Item("FastHarass").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.FastHarass;
                     }
+
                     if (_config.Item("Burst").GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.Burst;
                     }
+
                     if (_config.Item(CustomModeName) != null && _config.Item(CustomModeName).GetValue<KeyBind>().Active)
                     {
                         return OrbwalkingMode.CustomMode;
@@ -990,7 +981,7 @@ namespace HoolaRiven
                 }
 
                 /*Killable Minion*/
-                if (ActiveMode == OrbwalkingMode.LaneClear || (ActiveMode == OrbwalkingMode.Mixed &&  _config.Item("LWH").GetValue<bool>()) ||
+                if (ActiveMode == OrbwalkingMode.LaneClear || (ActiveMode == OrbwalkingMode.Mixed && _config.Item("LWH").GetValue<bool>()) ||
                     ActiveMode == OrbwalkingMode.LastHit)
                 {
                     var MinionList =
@@ -1009,7 +1000,7 @@ namespace HoolaRiven
                                 1000 * (int)Math.Max(0, Player.Distance(minion) - Player.BoundingRadius) / int.MaxValue;
                         var predHealth = HealthPrediction.GetHealthPrediction(minion, t, FarmDelay);
 
-                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() && 
+                        if (minion.Team != GameObjectTeam.Neutral && (_config.Item("AttackPetsnTraps").GetValue<bool>() &&
                             minion.CharData.BaseSkinName != "jarvanivstandard" || MinionManager.IsMinion(minion, _config.Item("AttackWards").GetValue<bool>())))
                         {
                             if (predHealth <= 0)
@@ -1023,7 +1014,7 @@ namespace HoolaRiven
                             }
                         }
 
-                        if (minion.Team == GameObjectTeam.Neutral && (_config.Item("AttackBarrel").GetValue<bool>() && 
+                        if (minion.Team == GameObjectTeam.Neutral && (_config.Item("AttackBarrel").GetValue<bool>() &&
                             minion.CharData.BaseSkinName == "gangplankbarrel" && minion.IsHPBarRendered))
                         {
                             if (minion.Health < 2)
@@ -1066,7 +1057,7 @@ namespace HoolaRiven
                 }
 
                 /*Champions*/
-                if (ActiveMode != OrbwalkingMode.LastHit && ActiveMode == OrbwalkingMode.Flee)
+                if (ActiveMode != OrbwalkingMode.LastHit && ActiveMode != OrbwalkingMode.Flee)
                 {
                     var target = TargetSelector.GetTarget(-1, TargetSelector.DamageType.Physical);
                     if (target.IsValidTarget() && InAutoAttackRange(target))
