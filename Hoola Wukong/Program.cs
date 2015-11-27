@@ -88,7 +88,7 @@ namespace HoolaWukong
             {
                 Orbwalking.LastAATick = 0;
             }
-            if (args.Slot == SpellSlot.E)
+            if (args.Slot == SpellSlot.E && Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo)
             {
                 CastYoumoo();
             }
