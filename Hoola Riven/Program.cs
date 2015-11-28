@@ -666,7 +666,7 @@ namespace HoolaRiven
             Player.IssueOrder(GameObjectOrder.MoveTo, Player.Position.Extend(Game.CursorPos, Player.Distance(Game.CursorPos) + 10));
         }
 
-      private static bool InWRange(GameObject target)=> (Player.HasBuff("RivenFengShuiEngine") && target != null) ?
+      private static bool InWRange(GameObject target)=> (target != null && Player.HasBuff("RivenFengShuiEngine") && ) ?
                     330 >= Player.Distance(target.Position) : 265 >= Player.Distance(target.Position);
         
 
